@@ -32,6 +32,14 @@ interface SecurityHealthScore {
   };
 }
 
+// Storage quota info from profile API (Operation: Iron Fist)
+interface StorageInfo {
+  storage_used: number;
+  storage_limit: number;
+  storage_percentage: number;
+  storage_remaining: number;
+}
+
 interface LoginRecord {
   id: number;
   username_attempted: string;
@@ -195,6 +203,7 @@ const DashboardPage: React.FC = () => {
   const { displayName } = useProfile();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [healthScore, setHealthScore] = useState<SecurityHealthScore | null>(null);
+  const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAllRecords, setShowAllRecords] = useState(false);
   const [allRecords, setAllRecords] = useState<LoginRecord[]>([]);
@@ -218,12 +227,23 @@ const DashboardPage: React.FC = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [statsResponse, healthResponse] = await Promise.all([
+      const [statsResponse, healthResponse, profileResponse] = await Promise.all([
         apiClient.get('/dashboard/statistics/'),
-        apiClient.get('/security/health-score/')
+        apiClient.get('/security/health-score/'),
+        apiClient.get('/profile/')
       ]);
       setStats(statsResponse.data);
       setHealthScore(healthResponse.data);
+      
+      // Extract storage info from profile response (Operation: Iron Fist)
+      if (profileResponse.data) {
+        setStorageInfo({
+          storage_used: profileResponse.data.storage_used || 0,
+          storage_limit: profileResponse.data.storage_limit || 20 * 1024 * 1024,
+          storage_percentage: profileResponse.data.storage_percentage || 0,
+          storage_remaining: profileResponse.data.storage_remaining || 20 * 1024 * 1024
+        });
+      }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
       setStats({
@@ -278,6 +298,8 @@ const DashboardPage: React.FC = () => {
               reusedPasswords={healthScore.breakdown.reused_passwords}
               breachedPasswords={healthScore.breakdown.breached_passwords}
               totalCredentials={healthScore.total_passwords}
+              storageUsed={storageInfo?.storage_used || 0}
+              storageLimit={storageInfo?.storage_limit || 20 * 1024 * 1024}
             />
           </section>
         )}

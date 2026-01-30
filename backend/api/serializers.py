@@ -53,6 +53,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
     email = serializers.CharField(source='user.email', read_only=True)
     profile_picture_url = serializers.SerializerMethodField()
     display_name = serializers.SerializerMethodField()
+    
+    # Storage quota fields
+    storage_used = serializers.IntegerField(read_only=True)
+    storage_limit = serializers.IntegerField(read_only=True)
+    storage_percentage = serializers.SerializerMethodField()
+    storage_remaining = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
@@ -60,9 +66,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'first_name', 'last_name',
             'phone_number', 'company_name', 'gender',
             'profile_picture', 'profile_picture_url', 'display_name',
-            'encryption_salt', 'created_at', 'updated_at'
+            'encryption_salt', 'created_at', 'updated_at',
+            # Storage quota fields
+            'storage_used', 'storage_limit', 'storage_percentage', 'storage_remaining'
         ]
-        read_only_fields = ['created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at', 'storage_used', 'storage_limit']
 
     def get_profile_picture_url(self, obj):
         """Return the full URL of the profile picture if it exists"""
@@ -76,6 +84,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def get_display_name(self, obj):
         """Return the display name (full name or username)"""
         return obj.display_name
+    
+    def get_storage_percentage(self, obj):
+        """Return storage usage as percentage"""
+        return round(obj.get_storage_percentage(), 1)
+    
+    def get_storage_remaining(self, obj):
+        """Return remaining storage in bytes"""
+        return obj.get_storage_remaining()
 
 
 class UserProfileUpdateSerializer(serializers.ModelSerializer):

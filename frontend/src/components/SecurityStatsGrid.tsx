@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, ShieldCheck, LockOpen, RefreshCw, AlertTriangle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Shield, ShieldCheck, LockOpen, RefreshCw, AlertTriangle, ArrowUpRight, ArrowDownRight, HardDrive } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -16,12 +16,19 @@ interface StatCardProps {
   gradeColor?: string;
 }
 
+interface StorageCardProps {
+  storageUsed: number;
+  storageLimit: number;
+}
+
 interface SecurityStatsGridProps {
   healthScore: number;
   weakPasswords: number;
   reusedPasswords: number;
   breachedPasswords: number;
   totalCredentials: number;
+  storageUsed?: number;
+  storageLimit?: number;
 }
 
 interface GradeInfo {
@@ -110,6 +117,72 @@ const StatCard: React.FC<StatCardProps> = ({
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// Storage Card Component (Operation: Iron Fist)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
+
+const getStorageColor = (percentage: number): { bg: string; bar: string; text: string } => {
+  if (percentage >= 90) {
+    return { bg: 'bg-red-500/10', bar: 'bg-red-500', text: 'text-red-500' };
+  } else if (percentage >= 75) {
+    return { bg: 'bg-yellow-500/10', bar: 'bg-yellow-500', text: 'text-yellow-500' };
+  }
+  return { bg: 'bg-emerald-500/10', bar: 'bg-emerald-500', text: 'text-emerald-500' };
+};
+
+const StorageCard: React.FC<StorageCardProps> = ({ storageUsed, storageLimit }) => {
+  const percentage = storageLimit > 0 ? Math.min(100, (storageUsed / storageLimit) * 100) : 0;
+  const colors = getStorageColor(percentage);
+  
+  return (
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 transition-all hover:shadow-md dark:hover:border-zinc-700">
+      {/* Icon with circular background */}
+      <div className={`inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full ${colors.bg} ${colors.text} mb-2 sm:mb-3`}>
+        <HardDrive className="w-4 h-4 sm:w-5 sm:h-5" />
+      </div>
+      
+      {/* Value */}
+      <div className="flex items-baseline gap-1.5 sm:gap-2 mb-1">
+        <div className="text-lg sm:text-xl md:text-2xl font-bold text-zinc-900 dark:text-white">
+          {formatBytes(storageUsed)}
+        </div>
+        <div className="text-sm text-zinc-500 dark:text-zinc-400">
+          / {formatBytes(storageLimit)}
+        </div>
+      </div>
+      
+      {/* Label */}
+      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400 font-medium mb-2 sm:mb-3">
+        Storage Used
+      </div>
+
+      {/* Progress Bar */}
+      <div className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+        <div 
+          className={`h-full ${colors.bar} transition-all duration-500 ease-out rounded-full`}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+      
+      {/* Percentage Text */}
+      <div className={`text-[10px] sm:text-xs font-medium mt-1.5 ${colors.text}`}>
+        {percentage.toFixed(1)}% used
+        {percentage >= 90 && (
+          <span className="ml-1 text-red-500">⚠️ Almost full!</span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // SecurityStatsGrid Component
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -119,6 +192,8 @@ export const SecurityStatsGrid: React.FC<SecurityStatsGridProps> = ({
   reusedPasswords,
   breachedPasswords,
   totalCredentials,
+  storageUsed = 0,
+  storageLimit = 20 * 1024 * 1024, // 20MB default
 }) => {
   // Empty State: If no credentials exist, show neutral state
   const isEmpty = totalCredentials === 0;
@@ -129,7 +204,7 @@ export const SecurityStatsGrid: React.FC<SecurityStatsGridProps> = ({
     : getGrade(healthScore);
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
       {/* Security Score with Grade */}
       <StatCard
         icon={isEmpty ? <Shield className="w-4 h-4 sm:w-5 sm:h-5" /> : <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />}
@@ -170,6 +245,12 @@ export const SecurityStatsGrid: React.FC<SecurityStatsGridProps> = ({
         iconBgColor="bg-red-500/10"
         iconTextColor="text-red-500"
         trend={breachedPasswords > 0 ? 0 : 0}
+      />
+
+      {/* Storage Usage (Operation: Iron Fist) */}
+      <StorageCard 
+        storageUsed={storageUsed}
+        storageLimit={storageLimit}
       />
     </div>
   );

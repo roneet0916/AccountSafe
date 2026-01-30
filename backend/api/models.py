@@ -146,6 +146,19 @@ class UserProfile(models.Model):
     # Panic Button configuration
     panic_shortcut = models.JSONField(default=list, blank=True, help_text="List of keys for panic shortcut, e.g., ['Alt', 'X']")
 
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STORAGE QUOTA TRACKING (Operation: Iron Fist)
+    # Free Tier: 20MB per user, enforced server-side
+    # ═══════════════════════════════════════════════════════════════════════════
+    storage_used = models.BigIntegerField(
+        default=0, 
+        help_text="Current storage used in bytes (auto-calculated from uploaded files)"
+    )
+    storage_limit = models.BigIntegerField(
+        default=20 * 1024 * 1024,  # 20MB in bytes
+        help_text="Maximum storage allowed in bytes (default: 20MB for Free Tier)"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -187,6 +200,83 @@ class UserProfile(models.Model):
     def has_pin(self) -> bool:
         """Check if PIN is set"""
         return bool(self.security_pin)
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STORAGE QUOTA METHODS
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def get_storage_percentage(self) -> float:
+        """Get storage usage as percentage (0-100)"""
+        if self.storage_limit == 0:
+            return 100.0
+        return min(100.0, (self.storage_used / self.storage_limit) * 100)
+    
+    def get_storage_remaining(self) -> int:
+        """Get remaining storage in bytes"""
+        return max(0, self.storage_limit - self.storage_used)
+    
+    def can_upload(self, file_size: int) -> bool:
+        """Check if user can upload a file of given size"""
+        return (self.storage_used + file_size) <= self.storage_limit
+    
+    def add_storage(self, size: int) -> None:
+        """Add to storage used (called after successful upload)"""
+        self.storage_used = max(0, self.storage_used + size)
+        self.save(update_fields=['storage_used'])
+    
+    def subtract_storage(self, size: int) -> None:
+        """Subtract from storage used (called after file deletion)"""
+        self.storage_used = max(0, self.storage_used - size)
+        self.save(update_fields=['storage_used'])
+    
+    def recalculate_storage(self) -> int:
+        """
+        Recalculate storage from actual files (for data integrity).
+        Returns the new calculated total.
+        """
+        from django.db.models import Sum
+        from django.db.models.functions import Coalesce
+        
+        total = 0
+        
+        # Profile picture
+        if self.profile_picture:
+            try:
+                total += self.profile_picture.size
+            except (FileNotFoundError, ValueError):
+                pass
+        
+        # Profile documents (across all user's categories/orgs)
+        from .models import Profile
+        profiles = Profile.objects.filter(
+            organization__category__user=self.user,
+            document__isnull=False
+        ).exclude(document='')
+        
+        for profile in profiles:
+            try:
+                if profile.document:
+                    total += profile.document.size
+            except (FileNotFoundError, ValueError):
+                pass
+        
+        # Organization logos
+        from .models import Organization
+        orgs = Organization.objects.filter(
+            category__user=self.user,
+            logo_image__isnull=False
+        ).exclude(logo_image='')
+        
+        for org in orgs:
+            try:
+                if org.logo_image:
+                    total += org.logo_image.size
+            except (FileNotFoundError, ValueError):
+                pass
+        
+        self.storage_used = total
+        self.save(update_fields=['storage_used'])
+        return total
 
     @property
     def full_name(self):
