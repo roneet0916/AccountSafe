@@ -138,8 +138,9 @@ const SecuritySettingsPage: React.FC = () => {
     }
   };
 
-  const handleVerifyPinResetOtp = async () => {
-    if (!pinResetOtp || pinResetOtp.length !== 6) {
+  const handleVerifyPinResetOtp = async (otpValue?: string) => {
+    const otp = otpValue ?? pinResetOtp;
+    if (!otp || otp.length !== 6) {
       setPinResetError("Please enter a valid 6-digit OTP");
       return;
     }
@@ -148,7 +149,7 @@ const SecuritySettingsPage: React.FC = () => {
     setPinResetError(null);
 
     try {
-      await verifyPasswordResetOTP(email, pinResetOtp);
+      await verifyPasswordResetOTP(email, otp);
       setPinResetStep('newpin');
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { error?: string } } };
@@ -744,9 +745,9 @@ const SecuritySettingsPage: React.FC = () => {
                     onChange={(e) => {
                       const value = e.target.value.replace(/\D/g, '');
                       setPinResetOtp(value);
-                      // Auto-submit when 6 digits entered
+                      // Auto-submit when 6 digits entered - pass value directly
                       if (value.length === 6 && !isPinResetting) {
-                        setTimeout(() => handleVerifyPinResetOtp(), 100);
+                        setTimeout(() => handleVerifyPinResetOtp(value), 100);
                       }
                     }}
                     className="as-input text-center text-xl tracking-widest mb-4 font-mono"
@@ -755,7 +756,7 @@ const SecuritySettingsPage: React.FC = () => {
                     inputMode="numeric"
                   />
                   <button
-                    onClick={handleVerifyPinResetOtp}
+                    onClick={() => handleVerifyPinResetOtp()}
                     disabled={isPinResetting || pinResetOtp.length !== 6}
                     className="w-full bg-purple-600 hover:bg-purple-500 text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >

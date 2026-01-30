@@ -456,9 +456,9 @@ const SecuritySettingsPanel: React.FC = () => {
 
       {/* Privacy Blur Section */}
       <div className="as-card p-4 md:p-6 border-blue-500/30">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-blue-500 dark:text-blue-400"><ShieldLockIcon /></span>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <span className="text-blue-500 dark:text-blue-400 mt-0.5"><ShieldLockIcon /></span>
             <div>
               <h3 className="text-base font-semibold text-zinc-900 dark:text-white">
                 Privacy Blur
@@ -470,20 +470,41 @@ const SecuritySettingsPanel: React.FC = () => {
           </div>
           
           {/* Toggle Switch */}
-          <button
+          <div
             onClick={togglePrivacyBlur}
-            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-zinc-900 ${
-              enablePrivacyBlur ? 'bg-blue-600' : 'bg-zinc-600'
-            }`}
             role="switch"
             aria-checked={enablePrivacyBlur}
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') togglePrivacyBlur(); }}
+            style={{
+              position: 'relative',
+              width: '44px',
+              minWidth: '44px',
+              height: '24px',
+              minHeight: '24px',
+              borderRadius: '9999px',
+              backgroundColor: enablePrivacyBlur ? '#2563eb' : '#52525b',
+              cursor: 'pointer',
+              flexShrink: 0,
+              boxSizing: 'border-box',
+              transition: 'background-color 200ms ease-in-out'
+            }}
           >
-            <span
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                enablePrivacyBlur ? 'translate-x-5' : 'translate-x-0'
-              }`}
+            <div
+              style={{
+                position: 'absolute',
+                top: '2px',
+                left: enablePrivacyBlur ? '22px' : '2px',
+                width: '20px',
+                height: '20px',
+                borderRadius: '50%',
+                backgroundColor: 'white',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                transition: 'left 200ms ease-in-out',
+                boxSizing: 'border-box'
+              }}
             />
-          </button>
+          </div>
         </div>
         
         <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-500">

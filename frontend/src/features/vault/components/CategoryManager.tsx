@@ -41,6 +41,7 @@ import type {
   DocumentType,
 } from '../types/category.types';
 import { isDigitalWalletCategory, findDigitalWalletDocument } from '../types/category.types';
+import type { ViewMode } from './CategorySection';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Icons
@@ -120,6 +121,15 @@ const CategoryManager: React.FC = () => {
   const [selectedCategoryName, setSelectedCategoryName] = useState<string>('');
   const [editingOrgId, setEditingOrgId] = useState<number | null>(null);
 
+  // View mode - responsive: list on mobile only (<sm), grid on tablet/desktop (sm+)
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 640;
+    }
+    return true;
+  });
+  const viewMode: ViewMode = isMobile ? 'list' : 'grid';
+
   // Form state
   const [newCategory, setNewCategory] = useState<CategoryFormData>({ name: '', description: '' });
   const [newOrg, setNewOrg] = useState<OrganizationFormData>({ name: '', logo_url: '', website_link: '' });
@@ -144,6 +154,16 @@ const CategoryManager: React.FC = () => {
       checkPinStatus();
     }
   }, [token, fetchCategories]);
+
+  // Handle window resize to auto-switch view mode
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const checkPinStatus = async () => {
     try {
@@ -359,7 +379,7 @@ const CategoryManager: React.FC = () => {
           </motion.div>
         )}
 
-        {/* Categories Grid */}
+        {/* Categories Grid/List */}
         {!isLoading && filteredCategories.length > 0 && (
           <div className="space-y-10">
             {filteredCategories.map((category) => (
@@ -367,6 +387,7 @@ const CategoryManager: React.FC = () => {
                 key={category.id}
                 category={category}
                 searchQuery={searchQuery}
+                viewMode={viewMode}
                 onAddOrg={() => openOrgModal(category.id)}
                 onEditOrg={(org) => handleEditOrganization(org, category.id)}
                 onDeleteCategory={() => handleDeleteCategory(category.id)}
@@ -462,8 +483,8 @@ interface SearchBarProps {
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, onSearchChange, onNewCategory, showPulse }) => (
-  <div className="mb-4 sm:mb-6 md:mb-8">
-    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+  <div className="sticky top-0 z-10 bg-white dark:bg-[#09090b] pb-4 sm:pb-6 md:pb-8 -mx-3 px-3 sm:-mx-4 sm:px-4 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 pt-2">
+    <div className="flex gap-2 sm:gap-3">
       <div className="relative flex-1">
         <SearchIcon className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-zinc-500 dark:text-zinc-500" />
         <input
@@ -486,10 +507,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, onSearchChange, onNe
       </div>
       <button
         onClick={onNewCategory}
-        className={`w-full sm:w-auto as-btn-primary flex items-center justify-center gap-2 group text-sm sm:text-base py-2.5 sm:py-3 whitespace-nowrap ${showPulse ? 'animate-pulse' : ''}`}
+        className={`as-btn-primary flex items-center justify-center gap-2 group text-sm sm:text-base py-2.5 sm:py-3 px-3 sm:px-4 whitespace-nowrap ${showPulse ? 'animate-pulse' : ''}`}
       >
         <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:rotate-90" />
-        <span>New Category</span>
+        <span className="hidden sm:inline">New Category</span>
       </button>
     </div>
   </div>

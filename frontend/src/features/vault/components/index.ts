@@ -11,6 +11,10 @@ export { default as CategoryManager } from './CategoryManager';
 export { default as CategorySection } from './CategorySection';
 export { default as OrganizationCard } from './OrganizationCard';
 export { default as DigitalWalletGrid } from './DigitalWalletGrid';
+export { default as VaultListItem } from './VaultListItem';
+
+// Export types
+export type { ViewMode } from './CategorySection';
 
 // Re-export card components
 export * from './cards';

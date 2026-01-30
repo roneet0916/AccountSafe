@@ -1,0 +1,51 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# AccountSafe - Local Development Dependencies (Windows/Python 3.14)
+# Uses packages that have pre-built wheels for Python 3.14
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Django Core
+Django>=5.0
+djangorestframework>=3.15.0
+
+# Authentication packages (using compatible versions)
+dj-rest-auth>=7.0.0
+django-allauth>=0.61.0,<0.62.0
+
+# CORS handling
+django-cors-headers>=4.0.0
+
+# HTTP requests
+requests>=2.32.0
+
+# HTML parsing for website title extraction
+beautifulsoup4>=4.12.0
+
+# Timezone support
+pytz>=2024.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# Image support - use latest version with Python 3.14 support
+Pillow>=11.1.0
+
+# Encryption
+cryptography>=44.0.0
+
+# User-Agent parsing for emails
+user-agents>=2.2.0
+
+# Rate limiting for API protection
+django-ratelimit>=4.1.0
+
+# JSON-formatted logging
+python-json-logger>=2.0.0
+
+# Testing Dependencies
+pytest>=8.0.0
+pytest-django>=4.9.0
+factory-boy>=3.3.0
+pytest-cov>=6.0.0
+
+# Faker for test data
+Faker>=40.0.0

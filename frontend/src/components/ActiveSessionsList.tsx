@@ -149,12 +149,12 @@ const ActiveSessionsList: React.FC<ActiveSessionsListProps> = ({ onSessionRevoke
   return (
     <div className="as-card p-4 md:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <span className="w-10 h-10 rounded-xl bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center text-green-500">
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="w-10 h-10 flex-shrink-0 rounded-xl bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center text-green-500">
             <DesktopIcon />
           </span>
-          <div>
+          <div className="min-w-0">
             <h3 className="text-base font-semibold text-zinc-900 dark:text-white">
               Active Sessions
             </h3>
@@ -168,7 +168,7 @@ const ActiveSessionsList: React.FC<ActiveSessionsListProps> = ({ onSessionRevoke
           <button
             onClick={handleRevokeAll}
             disabled={isRevokingAll}
-            className="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+            className="px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0 whitespace-nowrap"
           >
             {isRevokingAll ? 'Revoking...' : `Log out all (${otherSessionsCount})`}
           </button>
@@ -205,40 +205,36 @@ const ActiveSessionsList: React.FC<ActiveSessionsListProps> = ({ onSessionRevoke
           sessions.map((session) => (
             <div
               key={session.id}
-              className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
+              className={`flex items-start sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-xl border transition-all ${
                 session.is_current
                   ? 'border-green-200 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5'
                   : 'border-zinc-200 dark:border-zinc-700/50 bg-zinc-50/50 dark:bg-zinc-800/30 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50'
               }`}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
                 {/* Device Icon */}
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${getDeviceColor(session.device_type)}`}>
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 rounded-xl flex items-center justify-center ${getDeviceColor(session.device_type)}`}>
                   {getDeviceIcon(session.device_type)}
                 </div>
 
                 {/* Session Details */}
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-zinc-900 dark:text-white">
                       {session.browser || 'Unknown Browser'}
                     </span>
                     {session.is_current && (
-                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400">
+                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 flex-shrink-0">
                         Current Device
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-500 dark:text-zinc-400">
+                  <div className="text-sm text-zinc-500 dark:text-zinc-400">
                     <span>{session.os || 'Unknown OS'}</span>
                     {session.location && (
-                      <>
-                        <span className="w-1 h-1 rounded-full bg-zinc-400"></span>
-                        <span>{session.location}</span>
-                      </>
+                      <span> • {session.location}</span>
                     )}
-                    <span className="w-1 h-1 rounded-full bg-zinc-400"></span>
-                    <span>{session.last_active_display || 'Unknown'}</span>
+                    <span> • {session.last_active_display || 'Unknown'}</span>
                   </div>
                   <div className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
                     IP: {session.ip_address}
@@ -251,7 +247,7 @@ const ActiveSessionsList: React.FC<ActiveSessionsListProps> = ({ onSessionRevoke
                 <button
                   onClick={() => handleRevokeSession(session.id)}
                   disabled={revokingId === session.id}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
                 >
                   {revokingId === session.id ? (
                     <>

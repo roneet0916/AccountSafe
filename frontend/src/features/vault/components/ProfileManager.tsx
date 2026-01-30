@@ -813,15 +813,15 @@ const ProfileFormModal: React.FC<ProfileFormModalProps> = ({
   onGeneratePassword,
 }) => (
   <div
-    className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-[fadeIn_0.2s_ease-out]"
+    className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 animate-[fadeIn_0.2s_ease-out]"
     onClick={onClose}
   >
     <div
-      className="as-modal w-full max-w-lg max-h-[90vh] overflow-y-auto animate-[modalIn_0.3s_ease-out]"
+      className="as-modal w-full sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-y-auto animate-[modalIn_0.3s_ease-out] rounded-t-2xl sm:rounded-xl sm:m-4"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Modal Header */}
-      <div className="flex items-center justify-between p-6 border-b border-zinc-800 sticky top-0 bg-zinc-900 z-10">
+      <div className="flex items-center justify-between p-4 sm:p-6 border-b border-zinc-800 sticky top-0 bg-zinc-900 z-10 rounded-t-2xl sm:rounded-t-xl">
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg ${isCreditCardOrg ? 'bg-emerald-500/10' : 'bg-blue-500/10'}`}>
             {isCreditCardOrg ? (
@@ -887,7 +887,7 @@ const CreditCardForm: React.FC<{
   onClose: () => void;
   onCycleDesign: () => void;
 }> = ({ data, editingProfile, onChange, onSubmit, onClose, onCycleDesign }) => (
-  <form onSubmit={onSubmit} className="p-6 space-y-5">
+  <form onSubmit={onSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5">
     <div>
       <label className="block text-sm font-medium text-zinc-300 mb-2">
         Name of Bank <span className="text-red-400">*</span>
@@ -928,7 +928,12 @@ const CreditCardForm: React.FC<{
       <input
         type="text"
         value={data.cardNumber}
-        onChange={(e) => onChange({ ...data, cardNumber: e.target.value.replace(/[^\d\s]/g, '').slice(0, 19) })}
+        onChange={(e) => {
+          // Remove all non-digits, then format in groups of 4
+          const digits = e.target.value.replace(/\D/g, '').slice(0, 16);
+          const formatted = digits.replace(/(\d{4})(?=\d)/g, '$1 ');
+          onChange({ ...data, cardNumber: formatted });
+        }}
         placeholder="1234 5678 9012 3456"
         className="as-input w-full font-mono text-lg tracking-wider"
         required
@@ -985,11 +990,11 @@ const CreditCardForm: React.FC<{
     </div>
 
     {/* Card Preview */}
-    <div className="pt-2">
-      <div className="flex items-center justify-between mb-3">
+    <div className="pt-1 sm:pt-2">
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
         <p className="text-xs text-zinc-500">Card Preview (click to change theme)</p>
       </div>
-      <div onClick={onCycleDesign} className="cursor-pointer transition-transform hover:scale-[1.02]">
+      <div onClick={onCycleDesign} className="cursor-pointer transition-transform hover:scale-[1.02] max-w-[280px] sm:max-w-none mx-auto">
         <CreditCard
           design={data.design as CardDesignType}
           bankName={data.bankName || undefined}
@@ -1002,9 +1007,9 @@ const CreditCardForm: React.FC<{
       </div>
     </div>
 
-    <div className="flex gap-3 pt-2">
-      <button type="button" onClick={onClose} className="as-btn-secondary flex-1">Cancel</button>
-      <button type="submit" className="as-btn-primary flex-1">{editingProfile ? 'Save Changes' : 'Add Card'}</button>
+    <div className="grid grid-cols-2 gap-3 pt-3 sm:pt-4 pb-2">
+      <button type="button" onClick={onClose} className="as-btn-secondary w-full">Cancel</button>
+      <button type="submit" className="as-btn-primary w-full">{editingProfile ? 'Save Changes' : 'Add Card'}</button>
     </div>
   </form>
 );

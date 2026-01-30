@@ -10,7 +10,7 @@ djangorestframework==3.15.2
 
 # Authentication packages
 dj-rest-auth[with_social]==7.0.0
-django-allauth==65.3.0
+django-allauth==0.61.1
 
 # CORS handling
 django-cors-headers==4.6.0
