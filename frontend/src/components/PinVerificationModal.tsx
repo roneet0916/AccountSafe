@@ -328,7 +328,7 @@ const PinVerificationModal: React.FC<PinVerificationModalProps> = ({
                     <motion.div
                       animate={isShaking ? 'shake' : ''}
                       variants={shakeVariants}
-                      className="flex justify-center gap-3"
+                      className="flex justify-center gap-3 w-full px-2"
                       onPaste={handlePaste}
                     >
                       {pin.map((digit, index) => (
@@ -349,15 +349,14 @@ const PinVerificationModal: React.FC<PinVerificationModalProps> = ({
                             disabled={isLoading || isSuccess}
                             aria-label={`PIN digit ${index + 1}`}
                             className={`
-                              w-14 h-14 text-center text-2xl font-bold rounded-xl
-                              transition-all duration-200 outline-none
+                              w-12 h-12 sm:w-14 sm:h-14 text-center text-xl sm:text-2xl font-bold rounded-xl
+                              transition-all duration-200 focus:outline-none
                               ${error 
                                 ? 'border-red-400 dark:border-red-500 bg-red-50 dark:bg-red-500/10' 
-                                : 'border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50'
+                                : 'border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50'
                               }
                               border-2
-                              focus:border-blue-500 dark:focus:border-blue-400
-                              focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20
+                              focus:border-blue-600 dark:focus:border-blue-400
                               text-zinc-900 dark:text-white
                               disabled:opacity-50 disabled:cursor-not-allowed
                             `}
@@ -380,13 +379,13 @@ const PinVerificationModal: React.FC<PinVerificationModalProps> = ({
                     </motion.div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3">
+                    <div className="grid grid-cols-2 gap-3 w-full mt-2">
                       <motion.button
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
                         onClick={onClose}
                         disabled={isLoading}
-                        className="flex-1 as-btn-secondary"
+                        className="w-full as-btn-secondary"
                         aria-label="Cancel PIN verification"
                       >
                         Cancel
@@ -396,7 +395,7 @@ const PinVerificationModal: React.FC<PinVerificationModalProps> = ({
                         whileTap={{ scale: 0.99 }}
                         onClick={() => handleVerify()}
                         disabled={isLoading || pin.join('').length !== 4}
-                        className="flex-1 as-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full as-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="Verify PIN"
                       >
                         {isLoading ? (

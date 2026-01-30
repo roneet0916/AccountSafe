@@ -608,10 +608,10 @@ const CanaryTrapManager: React.FC<CanaryTrapManagerProps> = ({ className = '' })
   return (
     <div className={`as-card p-4 md:p-6 ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="min-w-0 flex-1">
           <h3 className="text-base font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
-            <span className="text-amber-500 dark:text-amber-400">
+            <span className="text-amber-500 dark:text-amber-400 flex-shrink-0">
               <TrapIcon />
             </span>
             Security Traps (Honeytokens)
@@ -622,7 +622,7 @@ const CanaryTrapManager: React.FC<CanaryTrapManagerProps> = ({ className = '' })
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="as-btn-primary inline-flex items-center gap-2"
+          className="as-btn-primary inline-flex items-center gap-2 flex-shrink-0 whitespace-nowrap"
         >
           <PlusIcon />
           <span className="hidden sm:inline">Create Trap</span>
@@ -666,23 +666,23 @@ const CanaryTrapManager: React.FC<CanaryTrapManagerProps> = ({ className = '' })
               <div
                 key={trap.id}
                 onClick={() => setSelectedTrap(trap)}
-                className="flex items-center gap-4 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-amber-400 dark:hover:border-amber-500 cursor-pointer transition-all group"
+                className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-amber-400 dark:hover:border-amber-500 cursor-pointer transition-all group"
               >
-                <div className={`w-10 h-10 rounded-lg bg-${config.color}-100 dark:bg-${config.color}-500/20 flex items-center justify-center text-${config.color}-600 dark:text-${config.color}-400`}>
+                <div className={`w-10 h-10 flex-shrink-0 rounded-lg bg-${config.color}-100 dark:bg-${config.color}-500/20 flex items-center justify-center text-${config.color}-600 dark:text-${config.color}-400`}>
                   <Icon />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-zinc-900 dark:text-white truncate">
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="font-medium text-zinc-900 dark:text-white truncate max-w-[150px] sm:max-w-none">
                       {trap.label}
                     </h4>
                     {!trap.is_active && (
-                      <span className="text-xs bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded-full">
+                      <span className="text-xs bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded-full flex-shrink-0">
                         Paused
                       </span>
                     )}
                     {trap.trigger_count > 0 && (
-                      <span className="text-xs bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="text-xs bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full flex items-center gap-1 flex-shrink-0">
                         <AlertIcon />
                         {trap.trigger_count} trigger{trap.trigger_count !== 1 ? 's' : ''}
                       </span>
@@ -692,7 +692,7 @@ const CanaryTrapManager: React.FC<CanaryTrapManagerProps> = ({ className = '' })
                     {config.label}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="hidden sm:flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={(e) => copyToClipboard(trap.trap_url, e)}
                     className="p-2 rounded-lg bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition-colors"

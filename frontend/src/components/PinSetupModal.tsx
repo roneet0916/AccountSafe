@@ -136,7 +136,7 @@ const PinSetupModal: React.FC<PinSetupModalProps> = ({ isOpen, onClose, onSucces
           </p>
 
           {/* PIN Input */}
-          <div className="flex justify-center gap-3 mb-6">
+          <div className="flex justify-center gap-3 w-full px-2 mb-6">
             {(step === 'enter' ? pin : confirmPin).map((digit, index) => (
               <input
                 key={index}
@@ -152,7 +152,7 @@ const PinSetupModal: React.FC<PinSetupModalProps> = ({ isOpen, onClose, onSucces
                 value={digit}
                 onChange={(e) => handlePinChange(index, e.target.value, step === 'confirm')}
                 onKeyDown={(e) => handleKeyDown(index, e, step === 'confirm')}
-                className="w-14 h-14 text-center text-2xl font-bold as-input rounded-xl focus:ring-2 focus:ring-blue-500"
+                className="w-12 h-12 sm:w-14 sm:h-14 text-center text-xl sm:text-2xl font-bold rounded-xl border-2 border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white focus:outline-none focus:border-blue-600 dark:focus:border-blue-400 transition-all duration-200 disabled:opacity-50"
                 inputMode="numeric"
                 pattern="[0-9]*"
               />
@@ -166,7 +166,7 @@ const PinSetupModal: React.FC<PinSetupModalProps> = ({ isOpen, onClose, onSucces
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-3">
+          <div className={`grid ${step === 'confirm' ? 'grid-cols-2' : 'grid-cols-1'} gap-3 w-full mt-2`}>
             {step === 'confirm' && (
               <button
                 onClick={() => {
@@ -175,7 +175,7 @@ const PinSetupModal: React.FC<PinSetupModalProps> = ({ isOpen, onClose, onSucces
                   setError(null);
                   setTimeout(() => inputRefs.current[0]?.focus(), 100);
                 }}
-                className="flex-1 as-btn-secondary"
+                className="w-full as-btn-secondary"
               >
                 Back
               </button>
@@ -183,7 +183,7 @@ const PinSetupModal: React.FC<PinSetupModalProps> = ({ isOpen, onClose, onSucces
             <button
               onClick={step === 'enter' ? handleSubmitPin : handleConfirmPin}
               disabled={isLoading || (step === 'enter' ? pin.join('').length !== 4 : confirmPin.join('').length !== 4)}
-              className="flex-1 as-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full as-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">

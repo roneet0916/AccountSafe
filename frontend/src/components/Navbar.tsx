@@ -137,14 +137,16 @@ const Navbar: React.FC = () => {
               )}
             </div>
             
-            {/* Documentation Link - Trust Signal */}
-            <Link
-              to="/docs"
-              className="px-4 py-2 rounded-lg text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all flex items-center gap-2 mr-2"
-            >
-              <BookOpen className="w-4 h-4" />
-              Documentation
-            </Link>
+            {/* Documentation Link - Only show when not logged in */}
+            {!token && (
+              <Link
+                to="/docs"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all flex items-center gap-2 mr-2"
+              >
+                <BookOpen className="w-4 h-4" />
+                Documentation
+              </Link>
+            )}
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2">
@@ -238,6 +240,14 @@ const Navbar: React.FC = () => {
                         >
                           <Trash2 className="w-4 h-4" />
                           Trash
+                        </Link>
+                        <Link 
+                          to="/docs" 
+                          onClick={() => setIsUserDropdownOpen(false)} 
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                        >
+                          <BookOpen className="w-4 h-4" />
+                          Documentation
                         </Link>
                         <Link 
                           to="/security" 

@@ -3,13 +3,18 @@
  * CategorySection - Collapsible Category Display
  * 
  * RESPONSIBILITY: Pure presentation component for displaying a category
- * with its organizations grid, header, and action buttons.
+ * with its organizations grid/list, header, and action buttons.
+ * Supports both Grid and List view modes for responsive design.
  */
 
 import React, { useState } from 'react';
 import { sortByFrequency } from '../../../utils/frequencyTracker';
 import OrganizationCard from './OrganizationCard';
+import VaultListItem from './VaultListItem';
 import type { Category, Organization } from '../types/category.types';
+
+// View Mode Type
+export type ViewMode = 'grid' | 'list';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Icons
@@ -52,6 +57,7 @@ const ShieldLockIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
 interface CategorySectionProps {
   category: Category;
   searchQuery: string;
+  viewMode: ViewMode;
   onAddOrg: (categoryId: number) => void;
   onEditOrg: (org: Organization, categoryId: number) => void;
   onDeleteCategory: (categoryId: number) => void;
@@ -66,6 +72,7 @@ interface CategorySectionProps {
 const CategorySection: React.FC<CategorySectionProps> = ({
   category,
   searchQuery,
+  viewMode,
   onAddOrg,
   onEditOrg,
   onDeleteCategory,
@@ -96,14 +103,13 @@ const CategorySection: React.FC<CategorySectionProps> = ({
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
             <FolderIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
           </div>
-          <div className="text-left">
+          <div className="text-left min-w-0 flex-1">
             <h2 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-white flex items-center gap-1.5 sm:gap-2">
-              {category.name}
-              <ChevronRightIcon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-zinc-400 dark:text-zinc-500 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+              <span className="truncate max-w-[150px] sm:max-w-none">{category.name}</span>
+              <ChevronRightIcon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-zinc-400 dark:text-zinc-500 transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`} />
             </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-500">
+            <p className="text-xs text-zinc-500 dark:text-zinc-500 truncate">
               {category.organizations.length} organization{category.organizations.length === 1 ? '' : 's'}
-              {category.description && ` • ${category.description}`}
             </p>
           </div>
         </button>
@@ -127,7 +133,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
         </div>
       </div>
 
-      {/* Organizations Grid */}
+      {/* Organizations Grid/List */}
       {isExpanded && (
         <>
           {filteredOrgs.length === 0 ? (
@@ -143,7 +149,21 @@ const CategorySection: React.FC<CategorySectionProps> = ({
                 Add First Organization
               </button>
             </div>
+          ) : viewMode === 'list' ? (
+            /* List View - Compact rows for mobile */
+            <div className="flex flex-col rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
+              {sortedOrgs.map((org) => (
+                <VaultListItem
+                  key={org.id}
+                  org={org}
+                  onClick={() => onOrgClick(org)}
+                  onEdit={() => onEditOrg(org, category.id)}
+                  onDelete={() => onDeleteOrg(org.id, category.id)}
+                />
+              ))}
+            </div>
           ) : (
+            /* Grid View - Cards layout */
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4">
               {sortedOrgs.map((org) => (
                 <OrganizationCard

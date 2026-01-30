@@ -71,4 +71,4 @@ docs/
 storybook-static/
 
 # Local nginx configs (production uses separate)
-nginx.local.conf
+# nginx.local.conf
