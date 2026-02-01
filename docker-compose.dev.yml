@@ -2,8 +2,6 @@
 # Use this for Phase 1: Database only (local development)
 # Usage: docker-compose -f docker-compose.dev.yml up -d
 
-version: '3.8'
-
 services:
   # ===== Database Service (PostgreSQL) =====
   db:

@@ -1,8 +1,6 @@
 # AccountSafe Docker Compose Configuration
 # Production-ready with PostgreSQL + Django + React/Nginx + SSL (Certbot)
 
-version: '3.8'
-
 services:
   # ===== Database Service =====
   db:
