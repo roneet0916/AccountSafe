@@ -454,8 +454,8 @@ class ClearPinView(APIView):
             if not user_profile.has_pin():
                 return Response({"error": "No PIN is currently set."}, status=status.HTTP_400_BAD_REQUEST)
             
-            user_profile.security_pin = None
-            user_profile.save()
+            user_profile.security_pin_hash = None
+            user_profile.save(update_fields=['security_pin_hash'])
             return Response({"message": "PIN cleared successfully."})
         except UserProfile.DoesNotExist:
             return Response({"error": "User profile not found."}, status=status.HTTP_404_NOT_FOUND)

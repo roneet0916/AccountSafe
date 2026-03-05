@@ -107,8 +107,8 @@ class UserProfile(models.Model):
         help_text="Upload your profile picture"
     )
 
-    # Security PIN for organization access
-    security_pin = models.CharField(max_length=4, blank=True, null=True, help_text="4-digit security PIN for accessing organizations")
+    # Security PIN for organization access (hashed - never stored in plaintext)
+    security_pin_hash = models.CharField(max_length=128, blank=True, null=True, help_text="Hashed security PIN for accessing organizations (never stored in plaintext)")
     
     # Encryption salt for client-side encryption
     encryption_salt = models.CharField(max_length=255, blank=True, null=True, help_text="Salt for deriving client-side encryption key")
@@ -186,20 +186,24 @@ class UserProfile(models.Model):
         return bool(self.duress_password_hash) or bool(self.duress_auth_hash)
 
     def set_pin(self, pin: str) -> bool:
-        """Set a 4-digit security PIN"""
+        """Set a 4-digit security PIN (stored as hash, never plaintext)"""
+        from django.contrib.auth.hashers import make_password
         if pin and len(pin) == 4 and pin.isdigit():
-            self.security_pin = pin
-            self.save()
+            self.security_pin_hash = make_password(pin)
+            self.save(update_fields=['security_pin_hash'])
             return True
         return False
 
     def verify_pin(self, pin: str) -> bool:
-        """Verify the security PIN"""
-        return self.security_pin and self.security_pin == pin
+        """Verify the security PIN using constant-time hash comparison"""
+        from django.contrib.auth.hashers import check_password
+        if not self.security_pin_hash:
+            return False
+        return check_password(pin, self.security_pin_hash)
 
     def has_pin(self) -> bool:
         """Check if PIN is set"""
-        return bool(self.security_pin)
+        return bool(self.security_pin_hash)
 
     # ═══════════════════════════════════════════════════════════════════════════
     # STORAGE QUOTA METHODS
