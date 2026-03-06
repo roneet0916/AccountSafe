@@ -19,6 +19,8 @@
 #
 # ═══════════════════════════════════════════════════════════════════════════════
 
+import hmac
+
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -260,23 +262,46 @@ class VaultAuthHashView(APIView):
             return Response({'has_auth_hash': False})
     
     def post(self, request):
-        """Set or update the auth hash."""
+        """Set or update the auth hash.
+        
+        Initial setup (no existing auth_hash): only new auth_hash required.
+        Update (auth_hash already set): current_auth_hash MUST be provided and
+        verified via constant-time comparison before the new value is accepted.
+        This prevents a stolen session token from permanently locking a user out.
+        """
         try:
             profile = request.user.userprofile
         except UserProfile.DoesNotExist:
             profile = UserProfile.objects.create(user=request.user)
-        
-        auth_hash = request.data.get('auth_hash')
-        
-        if not auth_hash:
+
+        new_auth_hash = request.data.get('auth_hash', '').strip().lower()
+
+        if not new_auth_hash:
             return Response(
                 {'error': 'auth_hash is required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        profile.auth_hash = auth_hash
-        profile.save()
-        
+
+        # If an auth_hash is already set, require current_auth_hash verification
+        if profile.auth_hash:
+            current_auth_hash = request.data.get('current_auth_hash', '').strip().lower()
+            if not current_auth_hash:
+                return Response(
+                    {'error': 'current_auth_hash is required to update an existing auth hash'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if not hmac.compare_digest(
+                current_auth_hash.encode(),
+                profile.auth_hash.lower().encode()
+            ):
+                return Response(
+                    {'error': 'Current auth hash verification failed'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+
+        profile.auth_hash = new_auth_hash
+        profile.save(update_fields=['auth_hash'])
+
         return Response({
             'message': 'Auth hash saved successfully',
         })
