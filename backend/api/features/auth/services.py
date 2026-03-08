@@ -106,11 +106,11 @@ class AuthService:
                 profile.save()
                 
                 # Create token and session
-                token = MultiToken.objects.create(user=user)
+                token, raw_key = MultiToken.create_token(user=user)
                 session = AuthService._create_session(user, token, request)
                 
                 return {
-                    'key': token.key,
+                    'key': raw_key,
                     'user': {'username': user.username, 'email': user.email},
                     'message': 'Registration successful (zero-knowledge)',
                     'status': 201
@@ -181,7 +181,7 @@ class AuthService:
         
         # Clean up old duress sessions and create new token
         DuressSession.objects.filter(user=user).delete()
-        token = MultiToken.objects.create(user=user)
+        token, raw_key = MultiToken.create_token(user=user)
         
         # Handle duress mode
         if is_duress_match:
@@ -208,7 +208,7 @@ class AuthService:
         AuthService._track_login(request, username, True, user, is_duress_match, send_email)
         
         response = {
-            'key': token.key,
+            'key': raw_key,
             'user': {'username': user.username, 'email': user.email},
             'is_duress': is_duress_match
         }

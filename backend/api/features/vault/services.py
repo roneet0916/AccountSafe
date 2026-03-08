@@ -19,10 +19,8 @@ class VaultService:
     @staticmethod
     def is_duress_session(request) -> bool:
         """Check if the current request is from a duress token."""
-        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-        if auth_header.startswith('Token '):
-            token_key = auth_header[6:]
-            return DuressSession.is_duress_token(token_key)
+        if hasattr(request, 'auth') and hasattr(request.auth, 'key'):
+            return DuressSession.is_duress_token(request.auth.key)
         return False
     
     @staticmethod

@@ -560,10 +560,12 @@ class UserSession(models.Model):
 class MultiToken(models.Model):
     """
     Custom token model that allows multiple tokens per user.
-    Unlike rest_framework.authtoken.Token which uses OneToOneField,
-    this uses ForeignKey to allow multiple tokens per user.
+    
+    Security: The raw token is only returned to the client once at creation.
+    The database stores a SHA-256 hash of the token, so a database breach
+    does not directly expose valid auth tokens.
     """
-    key = models.CharField(max_length=40, primary_key=True)
+    key = models.CharField(max_length=64, primary_key=True)  # SHA-256 hex digest
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='auth_tokens')
     created = models.DateTimeField(auto_now_add=True)
     
@@ -574,12 +576,32 @@ class MultiToken(models.Model):
     
     @classmethod
     def generate_key(cls):
-        import binascii
-        import os
-        return binascii.hexlify(os.urandom(20)).decode()
+        """Generate a 256-bit random token and return its SHA-256 digest."""
+        import secrets
+        raw = secrets.token_hex(32)
+        return cls.hash_raw_key(raw)
+    
+    @classmethod
+    def hash_raw_key(cls, raw_key: str) -> str:
+        """Hash a raw token using SHA-256 for storage/lookup."""
+        import hashlib
+        return hashlib.sha256(raw_key.encode('utf-8')).hexdigest()
+    
+    @classmethod
+    def create_token(cls, user):
+        """Create a new token. Returns (token_instance, raw_key).
+        
+        The raw_key must be sent to the client immediately - it cannot
+        be recovered from the database afterwards.
+        """
+        import secrets
+        raw_key = secrets.token_hex(32)  # 256 bits of entropy
+        digest = cls.hash_raw_key(raw_key)
+        token = cls.objects.create(key=digest, user=user)
+        return token, raw_key
     
     def __str__(self):
-        return self.key
+        return f"Token(user={self.user_id}, key={self.key[:8]}...)"
     
     class Meta:
         verbose_name = "Auth Token"
@@ -593,7 +615,7 @@ class DuressSession(models.Model):
     When a duress login occurs, the token key is stored here to indicate
     that subsequent API calls should return fake vault data.
     """
-    token_key = models.CharField(max_length=40, unique=True, help_text="The auth token key from rest_framework.authtoken")
+    token_key = models.CharField(max_length=64, unique=True, help_text="SHA-256 hash of the auth token")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='duress_sessions')
     created_at = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
