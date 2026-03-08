@@ -104,9 +104,9 @@ def create_zk_user(db):
         profile.save()
         
         # Create auth token
-        token = MultiToken.objects.create(user=user)
+        token, raw_key = MultiToken.create_token(user=user)
         
-        return user, token.key, auth_hash, salt
+        return user, raw_key, auth_hash, salt
     
     return _create_zk_user
 

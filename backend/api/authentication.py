@@ -9,14 +9,17 @@ class MultiTokenAuthentication(TokenAuthentication):
     """
     Custom token authentication that supports multiple tokens per user.
     Uses the MultiToken model instead of rest_framework.authtoken.Token.
-    Also checks if the associated UserSession is active.
+    
+    Incoming raw tokens are hashed with SHA-256 before database lookup,
+    since only the hash is stored.
     """
     model = MultiToken
     keyword = 'Token'
     
     def authenticate_credentials(self, key):
+        digest = MultiToken.hash_raw_key(key)
         try:
-            token = MultiToken.objects.select_related('user', 'session').get(key=key)
+            token = MultiToken.objects.select_related('user', 'session').get(key=digest)
         except MultiToken.DoesNotExist:
             raise AuthenticationFailed('Invalid token.')
         

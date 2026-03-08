@@ -131,7 +131,7 @@ class ZeroKnowledgeRegisterView(APIView):
                 profile.save()
                 
                 # Create auth token
-                token = MultiToken.objects.create(user=user)
+                token, raw_key = MultiToken.create_token(user=user)
                 
                 # Create session record
                 user_agent_str = request.META.get('HTTP_USER_AGENT', '')
@@ -155,7 +155,7 @@ class ZeroKnowledgeRegisterView(APIView):
                 logger.info(f"[ZK-AUTH] User registered: {username} (password NEVER transmitted)")
                 
                 return Response({
-                    'key': token.key,
+                    'key': raw_key,
                     'user': {
                         'username': user.username,
                         'email': user.email
@@ -256,7 +256,7 @@ class ZeroKnowledgeLoginView(APIView):
         DuressSession.objects.filter(user=user).delete()
         
         # Create new token
-        token = MultiToken.objects.create(user=user)
+        token, raw_key = MultiToken.create_token(user=user)
         
         # If duress login, mark the session
         if is_duress_match:
@@ -298,7 +298,7 @@ class ZeroKnowledgeLoginView(APIView):
         logger.info(f"[ZK-AUTH] Login successful: {username} (duress={is_duress_match}, password NEVER transmitted)")
         
         response_data = {
-            'key': token.key,
+            'key': raw_key,
             'user': {
                 'username': user.username,
                 'email': user.email
