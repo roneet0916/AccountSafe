@@ -35,7 +35,7 @@ services:
     environment:
       # Django settings
       DEBUG: "False"
-      SECRET_KEY: "${SECRET_KEY:-django-insecure-change-this-in-production}"
+      SECRET_KEY: "${SECRET_KEY:?SECRET_KEY environment variable is required. Generate with: python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'}"
       ALLOWED_HOSTS: "${DOMAIN:-localhost},backend,127.0.0.1"
       
       # Database - use 'db' as host (Docker internal network)
