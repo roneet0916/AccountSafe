@@ -8,6 +8,7 @@ Views handle HTTP only; Services handle business logic.
 
 import hmac
 import secrets
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth import login
 from django.db import transaction
@@ -87,12 +88,14 @@ class AuthService:
         if len(auth_hash) != 64 or not all(c in '0123456789abcdef' for c in auth_hash.lower()):
             return {'error': 'Invalid auth_hash format', 'status': 400}
         
-        # Verify Turnstile if provided
+        # Verify Turnstile — mandatory in production
         if turnstile_token and request:
             remote_ip = get_client_ip(request)
             result = verify_turnstile_token(turnstile_token, remote_ip)
             if not result.get('success'):
                 return {'error': 'Verification failed', 'status': 400}
+        elif not settings.DEBUG:
+            return {'error': 'CAPTCHA verification required', 'status': 400}
         
         # Check existing user/email
         if User.objects.filter(username__iexact=username).exists():
@@ -143,12 +146,14 @@ class AuthService:
         if not auth_hash:
             return {'error': 'auth_hash is required', 'status': 400}
         
-        # Verify Turnstile if provided
+        # Verify Turnstile — mandatory in production
         if turnstile_token and request:
             remote_ip = get_client_ip(request)
             result = verify_turnstile_token(turnstile_token, remote_ip)
             if not result.get('success'):
                 return {'error': 'Verification failed', 'status': 400}
+        elif not settings.DEBUG:
+            return {'error': 'CAPTCHA verification required', 'status': 400}
         
         # Find user
         try:

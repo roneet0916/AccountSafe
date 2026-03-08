@@ -206,7 +206,7 @@ class SecurityService:
                         lat, lon = location.split(',')
                         latitude = float(lat.strip())
                         longitude = float(lon.strip())
-                    except:
+                    except (ValueError, TypeError):
                         pass
                 
                 city = data.get('city', '')

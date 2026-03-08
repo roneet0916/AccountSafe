@@ -38,7 +38,7 @@ class LoginRecordSerializer(serializers.ModelSerializer):
                 local_tz = pytz.timezone(obj.timezone)
                 local_time = utc_time.astimezone(local_tz)
                 return local_time
-            except:
+            except Exception:
                 pass
         
         return utc_time

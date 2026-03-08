@@ -24,6 +24,7 @@ import secrets
 import hashlib
 import hmac
 import logging
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth import login
 from django.db import transaction
@@ -95,12 +96,14 @@ class ZeroKnowledgeRegisterView(APIView):
         if len(auth_hash) != 64 or not all(c in '0123456789abcdef' for c in auth_hash.lower()):
             return Response({'error': 'Invalid auth_hash format (expected 64 hex characters)'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Verify Turnstile token if provided
+        # Verify Turnstile token — mandatory in production
         if turnstile_token:
             remote_ip = get_client_ip(request)
             result = verify_turnstile_token(turnstile_token, remote_ip)
             if not result.get('success'):
                 return Response({'error': 'Verification failed. Please try again.'}, status=status.HTTP_400_BAD_REQUEST)
+        elif not settings.DEBUG:
+            return Response({'error': 'CAPTCHA verification required'}, status=status.HTTP_400_BAD_REQUEST)
         
         # Check if username already exists
         if User.objects.filter(username__iexact=username).exists():
@@ -202,12 +205,14 @@ class ZeroKnowledgeLoginView(APIView):
         if not auth_hash:
             return Response({'error': 'auth_hash is required'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Verify Turnstile token if provided
+        # Verify Turnstile token — mandatory in production
         if turnstile_token:
             remote_ip = get_client_ip(request)
             result = verify_turnstile_token(turnstile_token, remote_ip)
             if not result.get('success'):
                 return Response({'error': 'Verification failed. Please try again.'}, status=status.HTTP_400_BAD_REQUEST)
+        elif not settings.DEBUG:
+            return Response({'error': 'CAPTCHA verification required'}, status=status.HTTP_400_BAD_REQUEST)
         
         # Find user
         try:
@@ -361,7 +366,6 @@ class ZeroKnowledgeGetSaltView(APIView):
         - Indistinguishable from real base64-encoded salts
         - Unpredictable without knowing SECRET_KEY
         """
-        from django.conf import settings
         import base64
         digest = hmac.new(
             settings.SECRET_KEY.encode(),

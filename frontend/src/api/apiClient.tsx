@@ -28,11 +28,19 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     // If session was revoked (401 Unauthorized), logout immediately
+    // But only for session-validated requests, not login/auth endpoints
     if (error.response?.status === 401) {
       const currentPath = window.location.pathname;
-      
-      // Don't redirect if already on login/register pages
-      if (!['/login', '/register', '/reset-password'].includes(currentPath)) {
+      const requestUrl = error.config?.url || '';
+
+      // Don't forceLogout if on auth pages or if the failing request
+      // was to an auth endpoint (e.g. wrong password during re-auth)
+      const authPages = ['/login', '/register', '/reset-password'];
+      const authEndpoints = ['/zk/login/', '/zk/register/', '/zk/salt/', '/auth/login/', '/auth/register/', '/password-reset/'];
+      const isAuthPage = authPages.includes(currentPath);
+      const isAuthEndpoint = authEndpoints.some(ep => requestUrl.includes(ep));
+
+      if (!isAuthPage && !isAuthEndpoint) {
         forceLogout();
       }
     }

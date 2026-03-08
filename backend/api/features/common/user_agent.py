@@ -97,28 +97,28 @@ def parse_user_agent_basic(user_agent_str: str) -> dict:
         try:
             version = user_agent_str.split('Edg/')[1].split('.')[0]
             browser = f'Edge {version}'
-        except:
+        except Exception:
             pass
     elif 'chrome' in user_agent_lower and 'edg' not in user_agent_lower:
         browser = 'Chrome'
         try:
             version = user_agent_str.split('Chrome/')[1].split('.')[0]
             browser = f'Chrome {version}'
-        except:
+        except Exception:
             pass
     elif 'firefox' in user_agent_lower:
         browser = 'Firefox'
         try:
             version = user_agent_str.split('Firefox/')[1].split('.')[0]
             browser = f'Firefox {version}'
-        except:
+        except Exception:
             pass
     elif 'safari' in user_agent_lower and 'chrome' not in user_agent_lower:
         browser = 'Safari'
         try:
             version = user_agent_str.split('Version/')[1].split('.')[0]
             browser = f'Safari {version}'
-        except:
+        except Exception:
             pass
     elif 'opera' in user_agent_lower or 'opr' in user_agent_lower:
         browser = 'Opera'
@@ -142,7 +142,7 @@ def parse_user_agent_basic(user_agent_str: str) -> dict:
         try:
             version = user_agent_str.split('Mac OS X ')[1].split(')')[0].replace('_', '.')
             os_name = f'macOS {version}'
-        except:
+        except Exception:
             pass
     elif 'android' in user_agent_lower:
         os_name = 'Android'
@@ -150,7 +150,7 @@ def parse_user_agent_basic(user_agent_str: str) -> dict:
             if 'Android ' in user_agent_str:
                 version = user_agent_str.split('Android ')[1].split(';')[0].split(')')[0].strip()
                 os_name = f'Android {version}'
-        except:
+        except Exception:
             pass
     elif 'iphone' in user_agent_lower or 'ipad' in user_agent_lower:
         if 'ipad' in user_agent_lower:
@@ -164,7 +164,7 @@ def parse_user_agent_basic(user_agent_str: str) -> dict:
             elif 'iPhone OS ' in user_agent_str:
                 version_part = user_agent_str.split('iPhone OS ')[1].split(' ')[0].replace('_', '.')
                 os_name = f'iOS {version_part}'
-        except:
+        except Exception:
             pass
     elif 'linux' in user_agent_lower:
         os_name = 'Linux'
