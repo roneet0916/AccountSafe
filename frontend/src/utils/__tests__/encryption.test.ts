@@ -1,9 +1,5 @@
 // src/utils/__tests__/encryption.test.ts
 /**
- * @jest-environment node
- */
-
-/**
  * Client-Side Encryption Unit Tests
  * ═══════════════════════════════════════════════════════════════════════════════
  * 
