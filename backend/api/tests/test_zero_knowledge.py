@@ -92,8 +92,10 @@ class TestZeroKnowledgeRegisterView:
         salt = generate_salt()
         auth_hash = generate_auth_hash("password123", salt).upper()  # send UPPERCASE
         payload = self._register_payload(
-            username="carol", email="carol@test.com",
-            auth_hash=auth_hash, salt=salt,
+            username="carol",
+            email="carol@test.com",
+            auth_hash=auth_hash,
+            salt=salt,
         )
         resp = api_client.post(self.URL, payload, format="json")
         assert resp.status_code == status.HTTP_201_CREATED
@@ -107,7 +109,9 @@ class TestZeroKnowledgeRegisterView:
     def test_register_stores_encryption_salt(self, api_client):
         salt = generate_salt()
         payload = self._register_payload(
-            username="dave", email="dave@test.com", salt=salt,
+            username="dave",
+            email="dave@test.com",
+            salt=salt,
         )
         resp = api_client.post(self.URL, payload, format="json")
         assert resp.status_code == status.HTTP_201_CREATED
@@ -242,17 +246,17 @@ class TestZeroKnowledgeRegisterView:
         resp = api_client.post(self.URL, payload, format="json")
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
         # Verify no profile stored the XSS payload
-        assert not UserProfile.objects.filter(
-            auth_hash__contains="<script>"
-        ).exists()
+        assert not UserProfile.objects.filter(auth_hash__contains="<script>").exists()
 
     @override_settings(DEBUG=True)
     def test_register_response_does_not_leak_auth_hash(self, api_client):
         salt = generate_salt()
         auth_hash = generate_auth_hash("secret", salt)
         payload = self._register_payload(
-            username="noleak", email="noleak@test.com",
-            auth_hash=auth_hash, salt=salt,
+            username="noleak",
+            email="noleak@test.com",
+            auth_hash=auth_hash,
+            salt=salt,
         )
         resp = api_client.post(self.URL, payload, format="json")
         assert resp.status_code == status.HTTP_201_CREATED
@@ -266,8 +270,9 @@ class TestZeroKnowledgeRegisterView:
         # No turnstile_token in production mode
         resp = api_client.post(self.URL, payload, format="json")
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
-        assert "captcha" in resp.json().get("error", "").lower() or \
-               "verification" in resp.json().get("error", "").lower()
+        assert (
+            "captcha" in resp.json().get("error", "").lower() or "verification" in resp.json().get("error", "").lower()
+        )
 
     @override_settings(DEBUG=True)
     @patch("api.features.auth.zero_knowledge.verify_turnstile_token")
@@ -299,14 +304,13 @@ class TestZeroKnowledgeRegisterView:
             "api.features.auth.zero_knowledge.UserSession.objects.create",
             side_effect=Exception("DB error"),
         ):
-            payload = self._register_payload(
-                username="atomicfail", email="atomic@test.com"
-            )
+            payload = self._register_payload(username="atomicfail", email="atomic@test.com")
             resp = api_client.post(self.URL, payload, format="json")
             assert resp.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
 
-        assert not User.objects.filter(username="atomicfail").exists(), \
-            "User must be rolled back on transaction failure"
+        assert not User.objects.filter(
+            username="atomicfail"
+        ).exists(), "User must be rolled back on transaction failure"
 
     @override_settings(DEBUG=True)
     def test_register_concurrent_same_username(self, api_client):
@@ -360,9 +364,7 @@ class TestZeroKnowledgeLoginView:
 
     @override_settings(DEBUG=True)
     def test_login_correct_auth_hash(self, api_client, create_zk_user):
-        user, token, auth_hash, salt = create_zk_user(
-            username="loginuser", password="ValidPass1!"
-        )
+        user, token, auth_hash, salt = create_zk_user(username="loginuser", password="ValidPass1!")
         resp = api_client.post(
             self.URL,
             {"username": "loginuser", "auth_hash": auth_hash},
@@ -377,9 +379,7 @@ class TestZeroKnowledgeLoginView:
 
     @override_settings(DEBUG=True)
     def test_login_creates_new_token_each_time(self, api_client, create_zk_user):
-        user, token, auth_hash, salt = create_zk_user(
-            username="multilogin", password="Pass1!"
-        )
+        user, token, auth_hash, salt = create_zk_user(username="multilogin", password="Pass1!")
         tokens = set()
         for _ in range(3):
             resp = api_client.post(
@@ -394,9 +394,7 @@ class TestZeroKnowledgeLoginView:
 
     @override_settings(DEBUG=True)
     def test_login_creates_user_session(self, api_client, create_zk_user):
-        user, token, auth_hash, salt = create_zk_user(
-            username="sessionuser", password="Pass1!"
-        )
+        user, token, auth_hash, salt = create_zk_user(username="sessionuser", password="Pass1!")
         initial_count = UserSession.objects.filter(user=user).count()
         api_client.post(
             self.URL,
@@ -408,9 +406,7 @@ class TestZeroKnowledgeLoginView:
     @override_settings(DEBUG=True)
     @patch("api.features.auth.zero_knowledge.track_zk_login_attempt")
     def test_login_tracks_login_record_success(self, mock_track, api_client, create_zk_user):
-        user, token, auth_hash, salt = create_zk_user(
-            username="trackuser", password="Pass1!"
-        )
+        user, token, auth_hash, salt = create_zk_user(username="trackuser", password="Pass1!")
         api_client.post(
             self.URL,
             {"username": "trackuser", "auth_hash": auth_hash},
@@ -419,8 +415,9 @@ class TestZeroKnowledgeLoginView:
         mock_track.assert_called()
         # Verify is_success=True was passed
         call_kwargs = mock_track.call_args
-        assert call_kwargs[1].get("is_success", call_kwargs[0][2] if len(call_kwargs[0]) > 2 else None) is True or \
-               (len(call_kwargs[0]) > 2 and call_kwargs[0][2] is True)
+        assert call_kwargs[1].get("is_success", call_kwargs[0][2] if len(call_kwargs[0]) > 2 else None) is True or (
+            len(call_kwargs[0]) > 2 and call_kwargs[0][2] is True
+        )
 
     @override_settings(DEBUG=True)
     @patch("api.features.auth.zero_knowledge.track_zk_login_attempt")
@@ -434,14 +431,13 @@ class TestZeroKnowledgeLoginView:
         mock_track.assert_called()
         call_args = mock_track.call_args
         # is_success should be False
-        assert call_args[1].get("is_success", call_args[0][2] if len(call_args[0]) > 2 else None) is False or \
-               (len(call_args[0]) > 2 and call_args[0][2] is False)
+        assert call_args[1].get("is_success", call_args[0][2] if len(call_args[0]) > 2 else None) is False or (
+            len(call_args[0]) > 2 and call_args[0][2] is False
+        )
 
     @override_settings(DEBUG=True)
     def test_login_is_relogin_flag_suppresses_email(self, api_client, create_zk_user):
-        user, token, auth_hash, salt = create_zk_user(
-            username="reloginuser", password="Pass1!"
-        )
+        user, token, auth_hash, salt = create_zk_user(username="reloginuser", password="Pass1!")
         with patch("api.features.auth.zero_knowledge.track_zk_login_attempt") as mock_track:
             api_client.post(
                 self.URL,
@@ -451,8 +447,9 @@ class TestZeroKnowledgeLoginView:
             mock_track.assert_called()
             call_kwargs = mock_track.call_args
             # send_notification should be False for relogin
-            assert call_kwargs[1].get("send_notification") is False or \
-                   (len(call_kwargs[0]) > 5 and call_kwargs[0][5] is False)
+            assert call_kwargs[1].get("send_notification") is False or (
+                len(call_kwargs[0]) > 5 and call_kwargs[0][5] is False
+            )
 
     # ── Negative ──────────────────────────────────────────────────────────
 
@@ -469,16 +466,12 @@ class TestZeroKnowledgeLoginView:
 
     @override_settings(DEBUG=True)
     def test_login_missing_username(self, api_client):
-        resp = api_client.post(
-            self.URL, {"auth_hash": "a" * 64}, format="json"
-        )
+        resp = api_client.post(self.URL, {"auth_hash": "a" * 64}, format="json")
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
     @override_settings(DEBUG=True)
     def test_login_missing_auth_hash(self, api_client):
-        resp = api_client.post(
-            self.URL, {"username": "someone"}, format="json"
-        )
+        resp = api_client.post(self.URL, {"username": "someone"}, format="json")
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
     @override_settings(DEBUG=True)
@@ -497,9 +490,7 @@ class TestZeroKnowledgeLoginView:
     # ── Security / Anti-Enumeration ──────────────────────────────────────
 
     @override_settings(DEBUG=True)
-    def test_login_nonexistent_user_returns_same_as_wrong_password(
-        self, api_client, create_zk_user
-    ):
+    def test_login_nonexistent_user_returns_same_as_wrong_password(self, api_client, create_zk_user):
         """Response for nonexistent user MUST be identical to wrong password."""
         create_zk_user(username="existing", password="Pass1!")
 
@@ -515,8 +506,9 @@ class TestZeroKnowledgeLoginView:
         )
 
         assert resp_wrong_pw.status_code == resp_no_user.status_code == status.HTTP_401_UNAUTHORIZED
-        assert resp_wrong_pw.json() == resp_no_user.json(), \
-            "Responses must be identical to prevent username enumeration"
+        assert (
+            resp_wrong_pw.json() == resp_no_user.json()
+        ), "Responses must be identical to prevent username enumeration"
 
     @override_settings(DEBUG=True)
     def test_login_timing_attack_resistance(self, api_client, create_zk_user):
@@ -549,16 +541,12 @@ class TestZeroKnowledgeLoginView:
         delta = abs(avg_wrong - avg_no_user)
 
         # 100ms tolerance — generous to avoid flaky CI
-        assert delta < 0.1, (
-            f"Timing delta {delta:.4f}s exceeds 100ms tolerance — potential timing side channel"
-        )
+        assert delta < 0.1, f"Timing delta {delta:.4f}s exceeds 100ms tolerance — potential timing side channel"
 
     @override_settings(DEBUG=True)
     def test_login_constant_time_comparison_used(self, api_client, create_zk_user):
         """Verify hmac.compare_digest is called, not `==`."""
-        user, token, auth_hash, salt = create_zk_user(
-            username="consttime", password="Pass1!"
-        )
+        user, token, auth_hash, salt = create_zk_user(username="consttime", password="Pass1!")
         with patch(
             "api.features.auth.zero_knowledge.constant_time_compare",
             wraps=lambda a, b: hmac.compare_digest(a.encode(), b.encode()),
@@ -583,12 +571,8 @@ class TestZeroKnowledgeLoginView:
     # ── Duress Login ─────────────────────────────────────────────────────
 
     @override_settings(DEBUG=True)
-    def test_login_duress_auth_hash_returns_duress_salt(
-        self, api_client, create_zk_user
-    ):
-        user, token, auth_hash, salt = create_zk_user(
-            username="duresslogin", password="Master1!"
-        )
+    def test_login_duress_auth_hash_returns_duress_salt(self, api_client, create_zk_user):
+        user, token, auth_hash, salt = create_zk_user(username="duresslogin", password="Master1!")
         profile = UserProfile.objects.get(user=user)
         duress_salt = generate_salt()
         duress_hash = generate_auth_hash("Duress1!", duress_salt)
@@ -597,9 +581,7 @@ class TestZeroKnowledgeLoginView:
         profile.sos_email = "sos@test.com"
         profile.save()
 
-        with patch(
-            "api.features.security.services.SecurityService.send_duress_alert"
-        ):
+        with patch("api.features.security.services.SecurityService.send_duress_alert"):
             resp = api_client.post(
                 self.URL,
                 {"username": "duresslogin", "auth_hash": duress_hash},
@@ -613,9 +595,7 @@ class TestZeroKnowledgeLoginView:
 
     @override_settings(DEBUG=True)
     def test_login_duress_creates_duress_session(self, api_client, create_zk_user):
-        user, token, auth_hash, salt = create_zk_user(
-            username="duressession", password="Master1!"
-        )
+        user, token, auth_hash, salt = create_zk_user(username="duressession", password="Master1!")
         profile = UserProfile.objects.get(user=user)
         d_salt = generate_salt()
         d_hash = generate_auth_hash("Duress1!", d_salt)
@@ -623,9 +603,7 @@ class TestZeroKnowledgeLoginView:
         profile.duress_salt = d_salt
         profile.save()
 
-        with patch(
-            "api.features.security.services.SecurityService.send_duress_alert"
-        ):
+        with patch("api.features.security.services.SecurityService.send_duress_alert"):
             resp = api_client.post(
                 self.URL,
                 {"username": "duressession", "auth_hash": d_hash},
@@ -633,14 +611,11 @@ class TestZeroKnowledgeLoginView:
             )
 
         assert resp.status_code == status.HTTP_200_OK
-        assert DuressSession.objects.filter(user=user).exists(), \
-            "DuressSession MUST be created on duress login"
+        assert DuressSession.objects.filter(user=user).exists(), "DuressSession MUST be created on duress login"
 
     @override_settings(DEBUG=True)
     def test_login_duress_sends_sos_alert(self, api_client, create_zk_user):
-        user, token, auth_hash, salt = create_zk_user(
-            username="duresssos", password="Master1!"
-        )
+        user, token, auth_hash, salt = create_zk_user(username="duresssos", password="Master1!")
         profile = UserProfile.objects.get(user=user)
         d_salt = generate_salt()
         d_hash = generate_auth_hash("Duress1!", d_salt)
@@ -649,9 +624,7 @@ class TestZeroKnowledgeLoginView:
         profile.sos_email = "alert@test.com"
         profile.save()
 
-        with patch(
-            "api.features.security.services.SecurityService.send_duress_alert"
-        ) as mock_alert:
+        with patch("api.features.security.services.SecurityService.send_duress_alert") as mock_alert:
             api_client.post(
                 self.URL,
                 {"username": "duresssos", "auth_hash": d_hash},
@@ -665,13 +638,9 @@ class TestZeroKnowledgeLoginView:
         mock_alert.assert_called_once()
 
     @override_settings(DEBUG=True)
-    def test_login_duress_sos_failure_does_not_block_login(
-        self, api_client, create_zk_user
-    ):
+    def test_login_duress_sos_failure_does_not_block_login(self, api_client, create_zk_user):
         """If SOS email fails, login must still succeed."""
-        user, token, auth_hash, salt = create_zk_user(
-            username="sosfail", password="Master1!"
-        )
+        user, token, auth_hash, salt = create_zk_user(username="sosfail", password="Master1!")
         profile = UserProfile.objects.get(user=user)
         d_salt = generate_salt()
         d_hash = generate_auth_hash("Duress1!", d_salt)
@@ -697,9 +666,7 @@ class TestZeroKnowledgeLoginView:
     @override_settings(DEBUG=True)
     def test_login_multi_device_tokens_all_valid(self, api_client, create_zk_user):
         """All tokens from multiple logins remain valid for API access (multi-device)."""
-        user, token, auth_hash, salt = create_zk_user(
-            username="conclogin", password="Pass1!"
-        )
+        user, token, auth_hash, salt = create_zk_user(username="conclogin", password="Pass1!")
         tokens = []
         for _ in range(3):
             resp = api_client.post(
@@ -732,9 +699,7 @@ class TestZeroKnowledgeGetSaltView:
 
     @override_settings(DEBUG=True)
     def test_get_salt_existing_user(self, api_client, create_zk_user):
-        user, token, auth_hash, salt = create_zk_user(
-            username="saltuser", password="Pass1!"
-        )
+        user, token, auth_hash, salt = create_zk_user(username="saltuser", password="Pass1!")
         resp = api_client.get(self.URL, {"username": "saltuser"})
         assert resp.status_code == status.HTTP_200_OK
         assert resp.json()["salt"] == salt
@@ -743,8 +708,7 @@ class TestZeroKnowledgeGetSaltView:
     @override_settings(DEBUG=True)
     def test_get_salt_nonexistent_user_returns_fake_salt(self, api_client):
         resp = api_client.get(self.URL, {"username": "nonexistent_user_xyz"})
-        assert resp.status_code == status.HTTP_200_OK, \
-            "Must return 200 to prevent username enumeration"
+        assert resp.status_code == status.HTTP_200_OK, "Must return 200 to prevent username enumeration"
         assert "salt" in resp.json()
         assert resp.json()["salt"]  # non-empty
 
@@ -752,23 +716,17 @@ class TestZeroKnowledgeGetSaltView:
     def test_get_salt_fake_salt_is_deterministic(self, api_client):
         r1 = api_client.get(self.URL, {"username": "ghost1"})
         r2 = api_client.get(self.URL, {"username": "ghost1"})
-        assert r1.json()["salt"] == r2.json()["salt"], \
-            "Same nonexistent username must always return same fake salt"
+        assert r1.json()["salt"] == r2.json()["salt"], "Same nonexistent username must always return same fake salt"
 
     @override_settings(DEBUG=True)
     def test_get_salt_fake_salt_differs_per_username(self, api_client):
         r1 = api_client.get(self.URL, {"username": "ghost_a"})
         r2 = api_client.get(self.URL, {"username": "ghost_b"})
-        assert r1.json()["salt"] != r2.json()["salt"], \
-            "Different nonexistent usernames must get different fake salts"
+        assert r1.json()["salt"] != r2.json()["salt"], "Different nonexistent usernames must get different fake salts"
 
     @override_settings(DEBUG=True)
-    def test_get_salt_real_and_fake_salt_indistinguishable_format(
-        self, api_client, create_zk_user
-    ):
-        user, token, auth_hash, real_salt = create_zk_user(
-            username="fmtuser", password="Pass1!"
-        )
+    def test_get_salt_real_and_fake_salt_indistinguishable_format(self, api_client, create_zk_user):
+        user, token, auth_hash, real_salt = create_zk_user(username="fmtuser", password="Pass1!")
         real_resp = api_client.get(self.URL, {"username": "fmtuser"})
         fake_resp = api_client.get(self.URL, {"username": "fmtghost"})
 
@@ -790,9 +748,7 @@ class TestZeroKnowledgeGetSaltView:
 
     @override_settings(DEBUG=True)
     def test_get_salt_returns_duress_salt_if_exists(self, api_client, create_zk_user):
-        user, token, auth_hash, salt = create_zk_user(
-            username="duress_salt_user", password="Pass1!"
-        )
+        user, token, auth_hash, salt = create_zk_user(username="duress_salt_user", password="Pass1!")
         profile = UserProfile.objects.get(user=user)
         profile.duress_salt = "duress_salt_value_xyz"
         profile.duress_auth_hash = "a" * 64
@@ -804,9 +760,7 @@ class TestZeroKnowledgeGetSaltView:
 
     @override_settings(DEBUG=True)
     def test_get_salt_case_insensitive_username(self, api_client, create_zk_user):
-        user, token, auth_hash, salt = create_zk_user(
-            username="CaseSalt", password="Pass1!"
-        )
+        user, token, auth_hash, salt = create_zk_user(username="CaseSalt", password="Pass1!")
         resp = api_client.get(self.URL, {"username": "casesalt"})
         assert resp.status_code == status.HTTP_200_OK
         assert resp.json()["salt"] == salt
@@ -825,9 +779,7 @@ class TestZeroKnowledgeChangePasswordView:
 
     @override_settings(DEBUG=True)
     def test_change_password_success(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="chpwuser", password="OldPass1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="chpwuser", password="OldPass1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         new_salt = generate_salt()
@@ -851,9 +803,7 @@ class TestZeroKnowledgeChangePasswordView:
 
     @override_settings(DEBUG=True)
     def test_change_password_wrong_current_hash(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="chpwwrong", password="OldPass1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="chpwwrong", password="OldPass1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         resp = api_client.post(
@@ -882,9 +832,7 @@ class TestZeroKnowledgeChangePasswordView:
 
     @override_settings(DEBUG=True)
     def test_change_password_missing_fields(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="chpwmissing", password="Pass1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="chpwmissing", password="Pass1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         # Missing current
@@ -913,9 +861,7 @@ class TestZeroKnowledgeChangePasswordView:
 
     @override_settings(DEBUG=True)
     def test_change_password_old_token_still_works(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="tokenvalid", password="OldPass1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="tokenvalid", password="OldPass1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         new_salt = generate_salt()
@@ -937,9 +883,7 @@ class TestZeroKnowledgeChangePasswordView:
 
     @override_settings(DEBUG=True)
     def test_change_password_can_login_with_new_hash(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="loginafter", password="OldPass1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="loginafter", password="OldPass1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         new_salt = generate_salt()
@@ -965,9 +909,7 @@ class TestZeroKnowledgeChangePasswordView:
 
     @override_settings(DEBUG=True)
     def test_change_password_old_hash_no_longer_works(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="oldnogo", password="OldPass1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="oldnogo", password="OldPass1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         new_salt = generate_salt()
@@ -1016,9 +958,7 @@ class TestZeroKnowledgeSetDuressView:
 
     @override_settings(DEBUG=True)
     def test_set_duress_success(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="duressset", password="Master1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="duressset", password="Master1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         payload = self._setup_duress_payload(auth_hash)
@@ -1032,12 +972,8 @@ class TestZeroKnowledgeSetDuressView:
         assert resp.json()["has_duress_password"] is True
 
     @override_settings(DEBUG=True)
-    def test_set_duress_requires_master_auth_hash_verification(
-        self, api_client, create_zk_user
-    ):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="durverify", password="Master1!"
-        )
+    def test_set_duress_requires_master_auth_hash_verification(self, api_client, create_zk_user):
+        user, raw_key, auth_hash, salt = create_zk_user(username="durverify", password="Master1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         resp = api_client.post(
@@ -1052,9 +988,7 @@ class TestZeroKnowledgeSetDuressView:
 
     @override_settings(DEBUG=True)
     def test_set_duress_wrong_master_hash(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="durwrong", password="Master1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="durwrong", password="Master1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         resp = api_client.post(
@@ -1070,9 +1004,7 @@ class TestZeroKnowledgeSetDuressView:
 
     @override_settings(DEBUG=True)
     def test_set_duress_same_as_master_rejected(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="dursame", password="Master1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="dursame", password="Master1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         resp = api_client.post(
@@ -1089,9 +1021,7 @@ class TestZeroKnowledgeSetDuressView:
 
     @override_settings(DEBUG=True)
     def test_set_duress_stores_sos_email(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="dursos", password="Master1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="dursos", password="Master1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         payload = self._setup_duress_payload(auth_hash)
@@ -1117,9 +1047,7 @@ class TestZeroKnowledgeSetDuressView:
 
     @override_settings(DEBUG=True)
     def test_set_duress_overwrites_previous_duress(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="duroverwrite", password="Master1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="duroverwrite", password="Master1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         # Set first duress
@@ -1137,9 +1065,7 @@ class TestZeroKnowledgeSetDuressView:
 
     @override_settings(DEBUG=True)
     def test_set_duress_missing_duress_fields(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="durmissing", password="Master1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="durmissing", password="Master1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         # Missing duress_auth_hash
@@ -1172,18 +1098,14 @@ class TestZeroKnowledgeClearDuressView:
 
     @override_settings(DEBUG=True)
     def test_clear_duress_success(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="clearok", password="Master1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="clearok", password="Master1!")
         profile = UserProfile.objects.get(user=user)
         profile.duress_auth_hash = "b" * 64
         profile.duress_salt = "duress_salt_123"
         profile.save()
 
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
-        resp = api_client.post(
-            self.URL, {"master_auth_hash": auth_hash}, format="json"
-        )
+        resp = api_client.post(self.URL, {"master_auth_hash": auth_hash}, format="json")
         assert resp.status_code == status.HTTP_200_OK
 
         profile.refresh_from_db()
@@ -1192,12 +1114,8 @@ class TestZeroKnowledgeClearDuressView:
         assert resp.json()["has_duress_password"] is False
 
     @override_settings(DEBUG=True)
-    def test_clear_duress_requires_master_verification(
-        self, api_client, create_zk_user
-    ):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="clearverify", password="Master1!"
-        )
+    def test_clear_duress_requires_master_verification(self, api_client, create_zk_user):
+        user, raw_key, auth_hash, salt = create_zk_user(username="clearverify", password="Master1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         resp = api_client.post(self.URL, {}, format="json")
@@ -1205,37 +1123,25 @@ class TestZeroKnowledgeClearDuressView:
 
     @override_settings(DEBUG=True)
     def test_clear_duress_wrong_master_hash(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="clearwrong", password="Master1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="clearwrong", password="Master1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
-        resp = api_client.post(
-            self.URL, {"master_auth_hash": "f" * 64}, format="json"
-        )
+        resp = api_client.post(self.URL, {"master_auth_hash": "f" * 64}, format="json")
         assert resp.status_code == status.HTTP_401_UNAUTHORIZED
 
     @override_settings(DEBUG=True)
     def test_clear_duress_when_no_duress_set(self, api_client, create_zk_user):
         """Clearing duress when none is set should not error."""
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="clearnone", password="Master1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="clearnone", password="Master1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
-        resp = api_client.post(
-            self.URL, {"master_auth_hash": auth_hash}, format="json"
-        )
+        resp = api_client.post(self.URL, {"master_auth_hash": auth_hash}, format="json")
         assert resp.status_code == status.HTTP_200_OK
 
     @override_settings(DEBUG=True)
-    def test_clear_duress_existing_duress_sessions_invalidated(
-        self, api_client, create_zk_user
-    ):
+    def test_clear_duress_existing_duress_sessions_invalidated(self, api_client, create_zk_user):
         """Active duress sessions should be cleaned up on clear."""
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="clearsession", password="Master1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="clearsession", password="Master1!")
         profile = UserProfile.objects.get(user=user)
         d_salt = generate_salt()
         d_hash = generate_auth_hash("Duress1!", d_salt)
@@ -1251,9 +1157,7 @@ class TestZeroKnowledgeClearDuressView:
         assert DuressSession.objects.filter(user=user).exists()
 
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
-        api_client.post(
-            self.URL, {"master_auth_hash": auth_hash}, format="json"
-        )
+        api_client.post(self.URL, {"master_auth_hash": auth_hash}, format="json")
 
         # After clearing, the duress fields should be None
         profile.refresh_from_db()
@@ -1261,9 +1165,7 @@ class TestZeroKnowledgeClearDuressView:
 
     @override_settings(DEBUG=True)
     def test_clear_duress_requires_authentication(self, api_client):
-        resp = api_client.post(
-            self.URL, {"master_auth_hash": "a" * 64}, format="json"
-        )
+        resp = api_client.post(self.URL, {"master_auth_hash": "a" * 64}, format="json")
         assert resp.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -1280,14 +1182,10 @@ class TestZeroKnowledgeVerifyView:
 
     @override_settings(DEBUG=True)
     def test_verify_correct_master_hash(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="verifymaster", password="Pass1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="verifymaster", password="Pass1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
-        resp = api_client.post(
-            self.URL, {"auth_hash": auth_hash}, format="json"
-        )
+        resp = api_client.post(self.URL, {"auth_hash": auth_hash}, format="json")
         assert resp.status_code == status.HTTP_200_OK
         data = resp.json()
         assert data["verified"] is True
@@ -1295,9 +1193,7 @@ class TestZeroKnowledgeVerifyView:
 
     @override_settings(DEBUG=True)
     def test_verify_correct_duress_hash(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="verifydur", password="Pass1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="verifydur", password="Pass1!")
         profile = UserProfile.objects.get(user=user)
         d_salt = generate_salt()
         d_hash = generate_auth_hash("DuressVer1!", d_salt)
@@ -1306,9 +1202,7 @@ class TestZeroKnowledgeVerifyView:
         profile.save()
 
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
-        resp = api_client.post(
-            self.URL, {"auth_hash": d_hash}, format="json"
-        )
+        resp = api_client.post(self.URL, {"auth_hash": d_hash}, format="json")
         assert resp.status_code == status.HTTP_200_OK
         data = resp.json()
         assert data["verified"] is True
@@ -1316,34 +1210,24 @@ class TestZeroKnowledgeVerifyView:
 
     @override_settings(DEBUG=True)
     def test_verify_wrong_hash(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="verifywrong", password="Pass1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="verifywrong", password="Pass1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
-        resp = api_client.post(
-            self.URL, {"auth_hash": "e" * 64}, format="json"
-        )
+        resp = api_client.post(self.URL, {"auth_hash": "e" * 64}, format="json")
         assert resp.status_code == status.HTTP_401_UNAUTHORIZED
         assert resp.json()["verified"] is False
 
     @override_settings(DEBUG=True)
     def test_verify_requires_authentication(self, api_client):
-        resp = api_client.post(
-            self.URL, {"auth_hash": "a" * 64}, format="json"
-        )
+        resp = api_client.post(self.URL, {"auth_hash": "a" * 64}, format="json")
         assert resp.status_code == status.HTTP_401_UNAUTHORIZED
 
     @override_settings(DEBUG=True)
     def test_verify_returns_salt(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="verifysalt", password="Pass1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="verifysalt", password="Pass1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
-        resp = api_client.post(
-            self.URL, {"auth_hash": auth_hash}, format="json"
-        )
+        resp = api_client.post(self.URL, {"auth_hash": auth_hash}, format="json")
         assert resp.status_code == status.HTTP_200_OK
         assert resp.json()["salt"] == salt
 
@@ -1372,18 +1256,12 @@ class TestZeroKnowledgeSwitchModeView:
 
     @override_settings(DEBUG=True)
     def test_switch_to_duress_mode(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="switchdur", password="Master1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="switchdur", password="Master1!")
         d_hash, d_salt = self._setup_duress(user)
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
-        with patch(
-            "api.features.security.services.SecurityService.send_duress_alert"
-        ):
-            resp = api_client.post(
-                self.URL, {"auth_hash": d_hash}, format="json"
-            )
+        with patch("api.features.security.services.SecurityService.send_duress_alert"):
+            resp = api_client.post(self.URL, {"auth_hash": d_hash}, format="json")
 
         assert resp.status_code == status.HTTP_200_OK
         data = resp.json()
@@ -1394,63 +1272,46 @@ class TestZeroKnowledgeSwitchModeView:
 
     @override_settings(DEBUG=True)
     def test_switch_to_normal_mode(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="switchnorm", password="Master1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="switchnorm", password="Master1!")
         self._setup_duress(user)
 
         # Create existing duress session
         token_obj = MultiToken.objects.get(key=MultiToken.hash_raw_key(raw_key))
-        DuressSession.objects.create(
-            token_key=token_obj.key, user=user
-        )
+        DuressSession.objects.create(token_key=token_obj.key, user=user)
 
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
-        resp = api_client.post(
-            self.URL, {"auth_hash": auth_hash}, format="json"
-        )
+        resp = api_client.post(self.URL, {"auth_hash": auth_hash}, format="json")
 
         assert resp.status_code == status.HTTP_200_OK
         data = resp.json()
         assert data["verified"] is True
         assert data["is_duress"] is False
         assert data["salt"] == salt
-        assert not DuressSession.objects.filter(user=user).exists(), \
-            "DuressSession must be removed when switching to normal"
+        assert not DuressSession.objects.filter(
+            user=user
+        ).exists(), "DuressSession must be removed when switching to normal"
 
     @override_settings(DEBUG=True)
     def test_switch_mode_wrong_hash(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="switchwrong", password="Master1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="switchwrong", password="Master1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
-        resp = api_client.post(
-            self.URL, {"auth_hash": "e" * 64}, format="json"
-        )
+        resp = api_client.post(self.URL, {"auth_hash": "e" * 64}, format="json")
         assert resp.status_code == status.HTTP_401_UNAUTHORIZED
 
     @override_settings(DEBUG=True)
     def test_switch_mode_requires_authentication(self, api_client):
-        resp = api_client.post(
-            self.URL, {"auth_hash": "a" * 64}, format="json"
-        )
+        resp = api_client.post(self.URL, {"auth_hash": "a" * 64}, format="json")
         assert resp.status_code == status.HTTP_401_UNAUTHORIZED
 
     @override_settings(DEBUG=True)
     def test_switch_to_duress_sends_sos_alert(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="switchsos", password="Master1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="switchsos", password="Master1!")
         d_hash, d_salt = self._setup_duress(user)
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
-        with patch(
-            "api.features.security.services.SecurityService.send_duress_alert"
-        ) as mock_alert:
-            api_client.post(
-                self.URL, {"auth_hash": d_hash}, format="json"
-            )
+        with patch("api.features.security.services.SecurityService.send_duress_alert") as mock_alert:
+            api_client.post(self.URL, {"auth_hash": d_hash}, format="json")
             # SOS is sent in a background thread, give it time
             time.sleep(0.3)
 
@@ -1458,18 +1319,12 @@ class TestZeroKnowledgeSwitchModeView:
 
     @override_settings(DEBUG=True)
     def test_switch_to_normal_does_not_send_sos(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="switchnoalert", password="Master1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="switchnoalert", password="Master1!")
         self._setup_duress(user)
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
-        with patch(
-            "api.features.security.services.SecurityService.send_duress_alert"
-        ) as mock_alert:
-            api_client.post(
-                self.URL, {"auth_hash": auth_hash}, format="json"
-            )
+        with patch("api.features.security.services.SecurityService.send_duress_alert") as mock_alert:
+            api_client.post(self.URL, {"auth_hash": auth_hash}, format="json")
             time.sleep(0.3)
 
         mock_alert.assert_not_called()
@@ -1488,42 +1343,30 @@ class TestZeroKnowledgeDeleteAccountView:
 
     @override_settings(DEBUG=True)
     def test_delete_account_success(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="deluser", password="Pass1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="deluser", password="Pass1!")
         user_id = user.id
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
-        resp = api_client.post(
-            self.URL, {"auth_hash": auth_hash}, format="json"
-        )
+        resp = api_client.post(self.URL, {"auth_hash": auth_hash}, format="json")
         assert resp.status_code == status.HTTP_200_OK
         assert not User.objects.filter(id=user_id).exists()
 
     @override_settings(DEBUG=True)
     def test_delete_account_wrong_hash(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="delwrong", password="Pass1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="delwrong", password="Pass1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
-        resp = api_client.post(
-            self.URL, {"auth_hash": "f" * 64}, format="json"
-        )
+        resp = api_client.post(self.URL, {"auth_hash": "f" * 64}, format="json")
         assert resp.status_code == status.HTTP_401_UNAUTHORIZED
         assert User.objects.filter(id=user.id).exists(), "User must NOT be deleted"
 
     @override_settings(DEBUG=True)
     def test_delete_account_cascades_all_data(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="delcascade", password="Pass1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="delcascade", password="Pass1!")
         user_id = user.id
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
-        resp = api_client.post(
-            self.URL, {"auth_hash": auth_hash}, format="json"
-        )
+        resp = api_client.post(self.URL, {"auth_hash": auth_hash}, format="json")
         assert resp.status_code == status.HTTP_200_OK
 
         # Verify cascading delete
@@ -1533,44 +1376,32 @@ class TestZeroKnowledgeDeleteAccountView:
 
     @override_settings(DEBUG=True)
     def test_delete_account_token_invalidated(self, api_client, create_zk_user):
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="deltokeninv", password="Pass1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="deltokeninv", password="Pass1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         # Delete account
         api_client.post(self.URL, {"auth_hash": auth_hash}, format="json")
 
         # Try to use the token again
-        resp = api_client.post(
-            self.URL, {"auth_hash": auth_hash}, format="json"
-        )
+        resp = api_client.post(self.URL, {"auth_hash": auth_hash}, format="json")
         assert resp.status_code == status.HTTP_401_UNAUTHORIZED
 
     @override_settings(DEBUG=True)
     def test_delete_account_requires_authentication(self, api_client):
-        resp = api_client.post(
-            self.URL, {"auth_hash": "a" * 64}, format="json"
-        )
+        resp = api_client.post(self.URL, {"auth_hash": "a" * 64}, format="json")
         assert resp.status_code == status.HTTP_401_UNAUTHORIZED
 
     @override_settings(DEBUG=True)
     def test_delete_account_second_attempt_returns_401(self, api_client, create_zk_user):
         """After successful deletion, a second attempt with same token returns 401."""
-        user, raw_key, auth_hash, salt = create_zk_user(
-            username="delrace", password="Pass1!"
-        )
+        user, raw_key, auth_hash, salt = create_zk_user(username="delrace", password="Pass1!")
         api_client.credentials(HTTP_AUTHORIZATION=f"Token {raw_key}")
 
         # First delete succeeds
-        resp1 = api_client.post(
-            self.URL, {"auth_hash": auth_hash}, format="json"
-        )
+        resp1 = api_client.post(self.URL, {"auth_hash": auth_hash}, format="json")
         assert resp1.status_code == status.HTTP_200_OK
         assert not User.objects.filter(username="delrace").exists()
 
         # Second attempt fails — token invalidated by cascading delete
-        resp2 = api_client.post(
-            self.URL, {"auth_hash": auth_hash}, format="json"
-        )
+        resp2 = api_client.post(self.URL, {"auth_hash": auth_hash}, format="json")
         assert resp2.status_code == status.HTTP_401_UNAUTHORIZED

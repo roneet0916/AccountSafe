@@ -19,11 +19,11 @@ from .notifications import (
 
 __all__ = [
     # Concurrency
-    'FireAndForget',
-    'fire_and_forget',
+    "FireAndForget",
+    "fire_and_forget",
     # Notifications
-    'get_location_data',
-    'track_login_attempt',
-    'send_duress_alert_email',
-    'send_login_notification_email',
+    "get_location_data",
+    "track_login_attempt",
+    "send_duress_alert_email",
+    "send_login_notification_email",
 ]

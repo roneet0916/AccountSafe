@@ -50,6 +50,7 @@ jest.mock('../../services/CryptoContext', () => ({
 }));
 
 // Import component after mocks
+// eslint-disable-next-line import/first
 import Navbar from '../Navbar';
 
 
@@ -87,11 +88,11 @@ describe('Navbar Component', () => {
   });
 
   test('renders login/register links when not authenticated', () => {
-    const { container } = renderNavbar();
+    renderNavbar();
     
     // When token is null (not authenticated), should have navigation links
     // Just verify there are links present - specific text depends on implementation
-    const links = container.querySelectorAll('a');
+    const links = screen.getAllByRole('link');
     expect(links.length).toBeGreaterThan(0);
   });
 });

@@ -12,45 +12,58 @@ from api.models import Category, Organization, Profile
 class ProfileSerializer(serializers.ModelSerializer):
     """
     Serializer for Profile with CLIENT-SIDE ENCRYPTION.
-    
+
     The server stores encrypted ciphertext and IV pairs exactly as received
     from the browser. No server-side decryption occurs.
     """
+
     document_url = serializers.SerializerMethodField()
-    
+
     # Client-encrypted fields with IVs
     username_encrypted = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
     username_iv = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
-    
+
     password_encrypted = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
     password_iv = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
-    
+
     email_encrypted = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
     email_iv = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
-    
+
     notes_encrypted = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
     notes_iv = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
-    
+
     recovery_codes_encrypted = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
     recovery_codes_iv = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
-    
+
     class Meta:
         model = Profile
         fields = [
-            'id', 'organization', 'title',
-            'username_encrypted', 'username_iv',
-            'password_encrypted', 'password_iv',
-            'email_encrypted', 'email_iv',
-            'notes_encrypted', 'notes_iv',
-            'recovery_codes_encrypted', 'recovery_codes_iv',
-            'document', 'document_url',
-            'is_breached', 'last_breach_check_date', 'password_strength', 
-            'password_hash', 'last_password_update',
-            'is_pinned',
-            'created_at', 'updated_at'
+            "id",
+            "organization",
+            "title",
+            "username_encrypted",
+            "username_iv",
+            "password_encrypted",
+            "password_iv",
+            "email_encrypted",
+            "email_iv",
+            "notes_encrypted",
+            "notes_iv",
+            "recovery_codes_encrypted",
+            "recovery_codes_iv",
+            "document",
+            "document_url",
+            "is_breached",
+            "last_breach_check_date",
+            "password_strength",
+            "password_hash",
+            "last_password_update",
+            "is_pinned",
+            "created_at",
+            "updated_at",
         ]
-        read_only_fields = ['organization', 'created_at', 'updated_at']
-    
+        read_only_fields = ["organization", "created_at", "updated_at"]
+
     def validate_document(self, value):
         if value:
             max_size = 10 * 1024 * 1024  # 10MB
@@ -59,10 +72,10 @@ class ProfileSerializer(serializers.ModelSerializer):
                     f"File size cannot exceed 10MB. Current size: {value.size / (1024 * 1024):.2f}MB"
                 )
         return value
-    
+
     def get_document_url(self, obj):
         if obj.document:
-            request = self.context.get('request')
+            request = self.context.get("request")
             if request is not None:
                 return request.build_absolute_uri(obj.document.url)
         return None
@@ -70,85 +83,99 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 class OrganizationSerializer(serializers.ModelSerializer):
     """Serializer for Organization"""
+
     profile_count = serializers.SerializerMethodField()
     # Accept category_id for moving organizations between categories
     category_id = serializers.IntegerField(write_only=True, required=False)
 
     class Meta:
         model = Organization
-        fields = ['id', 'category', 'category_id', 'name', 'logo_url', 'website_link', 'logo_image', 'profile_count', 'created_at', 'updated_at']
-        read_only_fields = ['category', 'created_at', 'updated_at']
-    
+        fields = [
+            "id",
+            "category",
+            "category_id",
+            "name",
+            "logo_url",
+            "website_link",
+            "logo_image",
+            "profile_count",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["category", "created_at", "updated_at"]
+
     def get_profile_count(self, obj):
         return obj.profiles.count()
-    
+
     def validate_category_id(self, value):
         """Validate that the category_id belongs to the request user."""
-        request = self.context.get('request')
+        request = self.context.get("request")
         if request and request.user:
             try:
                 Category.objects.get(id=value, user=request.user)
             except Category.DoesNotExist:
-                raise serializers.ValidationError(
-                    "Category not found or does not belong to you."
-                )
+                raise serializers.ValidationError("Category not found or does not belong to you.")
         return value
-    
+
     def update(self, instance, validated_data):
         """Handle category_id to move organization to a different category."""
-        category_id = validated_data.pop('category_id', None)
+        category_id = validated_data.pop("category_id", None)
         if category_id is not None:
-            request = self.context.get('request')
+            request = self.context.get("request")
             if request and request.user:
                 try:
                     new_category = Category.objects.get(id=category_id, user=request.user)
                     instance.category = new_category
                 except Category.DoesNotExist:
                     pass  # Validation should have caught this
-        
+
         return super().update(instance, validated_data)
 
 
 class CategorySerializer(serializers.ModelSerializer):
     """Serializer for Category with nested organizations"""
+
     organizations = OrganizationSerializer(many=True, read_only=True)
 
     class Meta:
         model = Category
-        fields = ['id', 'name', 'description', 'organizations', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
+        fields = ["id", "name", "description", "organizations", "created_at", "updated_at"]
+        read_only_fields = ["created_at", "updated_at"]
 
 
 class CategoryCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating a Category"""
+
     class Meta:
         model = Category
-        fields = ['name', 'description']
+        fields = ["name", "description"]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SMART IMPORT SERIALIZERS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class SmartImportProfileSerializer(serializers.Serializer):
     """
     Serializer for a single profile in smart import.
-    
+
     ZERO-KNOWLEDGE: Server stores encrypted ciphertext+IV pairs exactly as received.
     No server-side decryption occurs.
     """
+
     title = serializers.CharField(max_length=255)
-    
+
     # Client-encrypted fields with IVs
     username_encrypted = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     username_iv = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    
+
     password_encrypted = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     password_iv = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    
+
     email_encrypted = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     email_iv = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    
+
     notes_encrypted = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     notes_iv = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
@@ -158,6 +185,7 @@ class SmartImportOrganizationSerializer(serializers.Serializer):
     Serializer for an organization in smart import.
     Includes nested profiles for bulk creation.
     """
+
     name = serializers.CharField(max_length=255)
     # Use CharField instead of URLField to allow empty strings
     logo_url = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=2048)
@@ -168,7 +196,7 @@ class SmartImportOrganizationSerializer(serializers.Serializer):
 class SmartImportSerializer(serializers.Serializer):
     """
     Main serializer for smart import payload.
-    
+
     Structure:
     {
         "category_name": "Microsoft Edge Passwords",
@@ -191,15 +219,16 @@ class SmartImportSerializer(serializers.Serializer):
         ]
     }
     """
+
     category_name = serializers.CharField(max_length=255)
     organizations = SmartImportOrganizationSerializer(many=True)
-    
+
     def validate_category_name(self, value):
         """Validate category name is not empty."""
         if not value or not value.strip():
             raise serializers.ValidationError("Category name cannot be empty.")
         return value.strip()
-    
+
     def validate_organizations(self, value):
         """Validate organizations list."""
         if not value:
@@ -207,4 +236,3 @@ class SmartImportSerializer(serializers.Serializer):
         if len(value) > 500:
             raise serializers.ValidationError("Maximum 500 organizations per import.")
         return value
-

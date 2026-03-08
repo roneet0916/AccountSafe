@@ -14,14 +14,11 @@ from django.urls import path, include
 
 urlpatterns = [
     # Zero-Knowledge Authentication & Auth Features
-    path('zk/', include('api.features.auth.urls')),
-    
+    path("zk/", include("api.features.auth.urls")),
     # Vault Management (categories, organizations, profiles, encrypted vault)
-    path('vault/', include('api.features.vault.urls')),
-    
+    path("vault/", include("api.features.vault.urls")),
     # Security Features (health score, sessions, settings, canary traps, org search)
-    path('security/', include('api.features.security.urls')),
-    
+    path("security/", include("api.features.security.urls")),
     # Shared Secrets (Secure Link Sharing)
-    path('shared-secrets/', include('api.features.shared_secret.urls')),
+    path("shared-secrets/", include("api.features.shared_secret.urls")),
 ]
