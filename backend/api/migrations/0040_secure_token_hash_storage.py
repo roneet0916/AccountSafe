@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0038_storage_quota'),
+        ('api', '0039_rename_security_pin_to_hash'),
     ]
 
     operations = [
