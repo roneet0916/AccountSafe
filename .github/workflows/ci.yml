@@ -1,0 +1,142 @@
+# =============================================================================
+# AccountSafe — Continuous Integration Pipeline
+# =============================================================================
+# Triggers on pull requests to main/master branches.
+# Runs backend (Python/Django) and frontend (Node/React) checks concurrently.
+# A failing step blocks the PR from merging.
+# =============================================================================
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main, master]
+    # Re-run if the workflow itself is changed
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'LICENSE'
+
+# Cancel in-flight CI runs for the same PR when a new commit is pushed
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ===========================================================================
+  # Backend Job — Python / Django / pytest / lint
+  # ===========================================================================
+  backend:
+    name: Backend (Python)
+    runs-on: ubuntu-latest
+
+    # Provide a PostgreSQL service container so Django tests can use a real DB
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: accountsafe_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        # Health-check so the job waits until Postgres is ready
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      # Django / DB settings for the test run
+      DJANGO_SETTINGS_MODULE: core.settings
+      SECRET_KEY: ci-test-secret-key-not-for-production
+      DEBUG: 'True'
+      DB_NAME: accountsafe_test
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: localhost
+      DB_PORT: '5432'
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      # ----- Checkout source -----
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ----- Python setup -----
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-local.txt
+
+      # ----- Install dependencies -----
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-local.txt
+          # Install linting tools (pinned for reproducibility)
+          pip install flake8==7.1.1 black==24.10.0
+
+      # ----- Lint: flake8 (style / error checks) -----
+      - name: Lint with flake8
+        run: |
+          # Stop the build on syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Treat all other issues as warnings (max-line-length = 120)
+          flake8 . --count --max-line-length=120 --statistics --exit-zero
+
+      # ----- Lint: black (formatting check, no auto-fix) -----
+      - name: Check formatting with black
+        run: black --check --line-length 120 .
+
+      # ----- Run Django test suite with pytest -----
+      - name: Run tests with pytest
+        run: pytest --tb=short -q
+
+  # ===========================================================================
+  # Frontend Job — Node.js / React / ESLint / tests
+  # ===========================================================================
+  frontend:
+    name: Frontend (Node.js)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      # ----- Checkout source -----
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ----- Node.js setup -----
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # ----- Install dependencies (clean install for CI reproducibility) -----
+      - name: Install dependencies
+        run: npm ci
+
+      # ----- Lint with ESLint -----
+      - name: Lint
+        run: npm run lint
+
+      # ----- Run test suite -----
+      # CI=true ensures react-scripts test runs once and exits (no watch mode)
+      - name: Run tests
+        run: npm test -- --watchAll=false --ci
+        env:
+          CI: 'true'
