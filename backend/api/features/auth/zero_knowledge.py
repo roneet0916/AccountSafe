@@ -320,15 +320,9 @@ class ZeroKnowledgeGetSaltView(APIView):
     GET /api/zk/salt/?username=xxx
     
     Get the encryption salt(s) for a user (needed for client-side key derivation).
-    This is public information (safe to expose).
     
-    Returns:
-    - salt: Primary encryption salt
-    - duress_salt: Duress mode salt (if duress is configured)
-    - has_zk_auth: Whether zero-knowledge auth is set up
-    
-    Note: Both salts are public info. Client must try BOTH when logging in
-    to support duress mode while maintaining zero-knowledge.
+    Returns a consistent response regardless of whether the user exists,
+    preventing username enumeration attacks.
     """
     permission_classes = [AllowAny]
     
@@ -343,25 +337,38 @@ class ZeroKnowledgeGetSaltView(APIView):
             profile = user.userprofile
             
             if not profile.encryption_salt:
-                return Response({'error': 'User has no encryption salt'}, status=status.HTTP_404_NOT_FOUND)
+                fake_salt = self._generate_deterministic_fake_salt(username)
+                return Response({'salt': fake_salt, 'has_zk_auth': True, 'duress_salt': None})
             
             response_data = {
                 'salt': profile.encryption_salt,
-                'has_zk_auth': bool(profile.auth_hash)  # Let client know if ZK auth is set up
+                'has_zk_auth': True,
+                'duress_salt': profile.duress_salt or None,
             }
-            
-            # Include duress_salt if configured (this is public info, safe to expose)
-            # Client needs both to try login with either password
-            if profile.duress_salt:
-                response_data['duress_salt'] = profile.duress_salt
             
             return Response(response_data)
             
-        except User.DoesNotExist:
-            # Don't reveal if user exists - return generic error
-            return Response({'error': 'Salt not found'}, status=status.HTTP_404_NOT_FOUND)
-        except UserProfile.DoesNotExist:
-            return Response({'error': 'Salt not found'}, status=status.HTTP_404_NOT_FOUND)
+        except (User.DoesNotExist, UserProfile.DoesNotExist):
+            fake_salt = self._generate_deterministic_fake_salt(username)
+            return Response({'salt': fake_salt, 'has_zk_auth': True, 'duress_salt': None})
+
+    @staticmethod
+    def _generate_deterministic_fake_salt(username: str) -> str:
+        """Generate a consistent fake salt for non-existent users.
+        
+        Uses HMAC-SHA256 keyed with SECRET_KEY so the output is:
+        - Deterministic per username (same fake salt on repeated requests)
+        - Indistinguishable from real base64-encoded salts
+        - Unpredictable without knowing SECRET_KEY
+        """
+        from django.conf import settings
+        import base64
+        digest = hmac.new(
+            settings.SECRET_KEY.encode(),
+            f"fake_salt:{username.lower()}".encode(),
+            hashlib.sha256
+        ).digest()[:16]  # Truncate to 16 bytes to match real salt length
+        return base64.b64encode(digest).decode()
 
 
 class ZeroKnowledgeChangePasswordView(APIView):
