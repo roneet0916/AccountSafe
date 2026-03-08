@@ -30,29 +30,41 @@ class AuthService:
     def get_user_salt(username: str) -> dict:
         """
         Get encryption salt(s) for a user.
-        Returns salt, duress_salt, and whether ZK auth is set up.
+        Returns a consistent response regardless of whether the user exists,
+        preventing username enumeration.
         """
         try:
             user = User.objects.get(username__iexact=username)
             profile = user.userprofile
             
             if not profile.encryption_salt:
-                return {'error': 'User has no encryption salt', 'status': 404}
+                fake_salt = AuthService._generate_deterministic_fake_salt(username)
+                return {'salt': fake_salt, 'has_zk_auth': True, 'duress_salt': None}
             
             response = {
                 'salt': profile.encryption_salt,
-                'has_zk_auth': bool(profile.auth_hash)
+                'has_zk_auth': True,
+                'duress_salt': profile.duress_salt or None,
             }
-            
-            if profile.duress_salt:
-                response['duress_salt'] = profile.duress_salt
             
             return response
             
-        except User.DoesNotExist:
-            return {'error': 'Salt not found', 'status': 404}
-        except UserProfile.DoesNotExist:
-            return {'error': 'Salt not found', 'status': 404}
+        except (User.DoesNotExist, UserProfile.DoesNotExist):
+            fake_salt = AuthService._generate_deterministic_fake_salt(username)
+            return {'salt': fake_salt, 'has_zk_auth': True, 'duress_salt': None}
+
+    @staticmethod
+    def _generate_deterministic_fake_salt(username: str) -> str:
+        """Generate a consistent fake salt for non-existent users."""
+        import hashlib
+        import base64
+        from django.conf import settings
+        digest = hmac.new(
+            settings.SECRET_KEY.encode(),
+            f"fake_salt:{username.lower()}".encode(),
+            hashlib.sha256
+        ).digest()[:16]  # Truncate to 16 bytes to match real salt length
+        return base64.b64encode(digest).decode()
     
     @staticmethod
     def register_user(username: str, email: str, auth_hash: str, salt: str, 
