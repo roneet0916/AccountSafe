@@ -1,10 +1,10 @@
 # api/models.py
 
-import random
 import uuid
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -167,7 +167,6 @@ class UserProfile(models.Model):
     
     def set_duress_password(self, password: str) -> bool:
         """Set the duress password (hashed using Django's password hasher)"""
-        from django.contrib.auth.hashers import make_password
         if password:
             self.duress_password_hash = make_password(password)
             self.save()
@@ -176,7 +175,6 @@ class UserProfile(models.Model):
     
     def verify_duress_password(self, password: str) -> bool:
         """Verify the duress password"""
-        from django.contrib.auth.hashers import check_password
         if not self.duress_password_hash:
             return False
         return check_password(password, self.duress_password_hash)
@@ -187,7 +185,6 @@ class UserProfile(models.Model):
 
     def set_pin(self, pin: str) -> bool:
         """Set a 4-digit security PIN (stored as hash, never plaintext)"""
-        from django.contrib.auth.hashers import make_password
         if pin and len(pin) == 4 and pin.isdigit():
             self.security_pin_hash = make_password(pin)
             self.save(update_fields=['security_pin_hash'])
@@ -196,7 +193,6 @@ class UserProfile(models.Model):
 
     def verify_pin(self, pin: str) -> bool:
         """Verify the security PIN using constant-time hash comparison"""
-        from django.contrib.auth.hashers import check_password
         if not self.security_pin_hash:
             return False
         return check_password(pin, self.security_pin_hash)
@@ -238,9 +234,6 @@ class UserProfile(models.Model):
         Recalculate storage from actual files (for data integrity).
         Returns the new calculated total.
         """
-        from django.db.models import Sum
-        from django.db.models.functions import Coalesce
-        
         total = 0
         
         # Profile picture
@@ -251,7 +244,6 @@ class UserProfile(models.Model):
                 pass
         
         # Profile documents (across all user's categories/orgs)
-        from .models import Profile
         profiles = Profile.objects.filter(
             organization__category__user=self.user,
             document__isnull=False
@@ -434,7 +426,7 @@ class Profile(models.Model):
     is_pinned = models.BooleanField(default=False, help_text="Pin this profile to the top of the list")
     
     # Soft delete support (Trash/Recycle Bin)
-    deleted_at = models.DateTimeField(null=True, blank=True, help_text="When the profile was moved to trash (null = not deleted)")
+    deleted_at = models.DateTimeField(null=True, blank=True, db_index=True, help_text="When the profile was moved to trash (null = not deleted)")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -450,7 +442,6 @@ class Profile(models.Model):
         """Calculate days until permanent deletion. Returns None if not in trash."""
         if not self.deleted_at:
             return None
-        from datetime import timedelta
         expiry_date = self.deleted_at + timedelta(days=30)
         remaining = expiry_date - timezone.now()
         return max(0, remaining.days)
@@ -470,7 +461,7 @@ class LoginRecord(models.Model):
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='login_records', null=True, blank=True)
-    username_attempted = models.CharField(max_length=150)
+    username_attempted = models.CharField(max_length=150, db_index=True)
     # SECURITY: password_attempted field REMOVED - never store passwords!
     # Zero-knowledge means server never sees passwords
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
@@ -540,7 +531,7 @@ class UserSession(models.Model):
     os = models.CharField(max_length=100, blank=True, help_text="e.g., Windows 11")
     location = models.CharField(max_length=200, blank=True, help_text="e.g., Mumbai, India")
     country_code = models.CharField(max_length=10, blank=True, help_text="ISO country code, e.g., IN")
-    is_active = models.BooleanField(default=True, help_text="Whether this session is active")
+    is_active = models.BooleanField(default=True, db_index=True, help_text="Whether this session is active")
     created_at = models.DateTimeField(auto_now_add=True)
     last_active = models.DateTimeField(auto_now=True)
     

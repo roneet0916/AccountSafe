@@ -283,7 +283,7 @@ def login_records(request):
         limit = int(limit)
         if limit > 100:
             limit = 100
-    except:
+    except (ValueError, TypeError):
         limit = 50
     
     records = LoginRecord.objects.filter(

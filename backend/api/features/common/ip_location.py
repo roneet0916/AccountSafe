@@ -5,18 +5,21 @@ IP geolocation utilities.
 
 import logging
 import requests
-from functools import lru_cache
+from django.core.cache import cache
 
 # Module-level logger
 logger = logging.getLogger(__name__)
 
+# Cache timeout: 24 hours (IP-to-location rarely changes)
+IP_CACHE_TIMEOUT = 86400
 
-@lru_cache(maxsize=1000)
+
 def get_ip_location(ip_address: str) -> dict:
     """
     Get location information from IP address using ip-api.com (free, no API key required).
     Returns dict with city, country, country_code, or empty values on failure.
-    Results are cached to avoid excessive API calls.
+    Results are cached via Django's cache framework (works across Gunicorn workers
+    when backed by Redis/Memcached; falls back to LocMemCache in dev).
     """
     # Skip local/private IPs
     if ip_address in ('127.0.0.1', 'localhost', '::1') or ip_address.startswith(('10.', '192.168.', '172.')):
@@ -27,8 +30,13 @@ def get_ip_location(ip_address: str) -> dict:
             'location': 'Local Network'
         }
     
+    # Check cache first
+    cache_key = f'ip_location:{ip_address}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     try:
-        # Using ip-api.com (free, 45 requests per minute)
         response = requests.get(
             f'http://ip-api.com/json/{ip_address}',
             params={'fields': 'status,city,country,countryCode'},
@@ -50,12 +58,14 @@ def get_ip_location(ip_address: str) -> dict:
                 else:
                     location = ''
                 
-                return {
+                result = {
                     'city': city,
                     'country': country,
                     'country_code': country_code,
                     'location': location
                 }
+                cache.set(cache_key, result, IP_CACHE_TIMEOUT)
+                return result
     except Exception as e:
         logger.warning(f"[IP Location] Error getting location for {ip_address}: {e}")
     

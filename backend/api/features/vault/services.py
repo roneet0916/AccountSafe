@@ -12,6 +12,8 @@ from api.models import (
     DuressSession, CuratedOrganization
 )
 
+import secrets
+
 
 class VaultService:
     """Service layer for vault operations."""
@@ -220,9 +222,8 @@ class VaultService:
     def create_organization(category_id: int, user, data: dict, is_duress: bool = False):
         """Create a new organization."""
         if is_duress:
-            import random
             return {
-                "id": random.randint(100000, 999999),
+                "id": secrets.randbelow(900000) + 100000,
                 "name": data.get("name", "New Organization"),
                 "logo_url": data.get("logo_url"),
                 "logo_image": None,
@@ -323,9 +324,8 @@ class VaultService:
     def create_profile(organization_id: int, user, data: dict, is_duress: bool = False):
         """Create a new profile."""
         if is_duress:
-            import random
             return {
-                "id": random.randint(100000, 999999),
+                "id": secrets.randbelow(900000) + 100000,
                 "title": data.get("title", "New Profile"),
                 "username_encrypted": data.get("username_encrypted"),
                 "username_iv": data.get("username_iv"),
