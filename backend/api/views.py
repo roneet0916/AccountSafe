@@ -29,86 +29,87 @@ from .serializers import UserProfileSerializer, UserProfileUpdateSerializer
 logger = logging.getLogger(__name__)
 
 
-# 
+#
 # API ROOT
-# 
+#
 
-@api_view(['GET'])
+
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def root_route(request):
     """
     API Root - Returns available endpoints and API info.
     """
-    return Response({
-        'name': 'AccountSafe API',
-        'version': '2.0.0',
-        'architecture': 'Zero-Knowledge',
-        'description': 'Secure password manager with TRUE zero-knowledge encryption',
-        'endpoints': {
-            'auth': {
-                'register': '/api/zk/register/',
-                'login': '/api/zk/login/',
-                'salt': '/api/zk/salt/',
-                'change_password': '/api/zk/change-password/',
-                'delete_account': '/api/zk/delete-account/',
-                'verify': '/api/zk/verify/',
+    return Response(
+        {
+            "name": "AccountSafe API",
+            "version": "2.0.0",
+            "architecture": "Zero-Knowledge",
+            "description": "Secure password manager with TRUE zero-knowledge encryption",
+            "endpoints": {
+                "auth": {
+                    "register": "/api/zk/register/",
+                    "login": "/api/zk/login/",
+                    "salt": "/api/zk/salt/",
+                    "change_password": "/api/zk/change-password/",
+                    "delete_account": "/api/zk/delete-account/",
+                    "verify": "/api/zk/verify/",
+                },
+                "password_reset": {
+                    "request_otp": "/api/password-reset/request-otp/",
+                    "verify_otp": "/api/password-reset/verify-otp/",
+                    "set_new_password": "/api/password-reset/set-new-password/",
+                },
+                "pin": {
+                    "setup": "/api/pin/setup/",
+                    "verify": "/api/pin/verify/",
+                    "status": "/api/pin/status/",
+                    "clear": "/api/pin/clear/",
+                },
+                "vault": {
+                    "categories": "/api/categories/",
+                    "vault": "/api/vault/",
+                    "export": "/api/vault/export/",
+                    "import": "/api/vault/import/",
+                    "smart_import": "/api/vault/smart-import/",
+                },
+                "security": {
+                    "health_score": "/api/security/health-score/",
+                    "settings": "/api/security/settings/",
+                    "sessions": "/api/sessions/",
+                    "canary_traps": "/api/security/traps/",
+                },
+                "profile": "/api/profile/",
+                "dashboard": "/api/dashboard/statistics/",
             },
-            'password_reset': {
-                'request_otp': '/api/password-reset/request-otp/',
-                'verify_otp': '/api/password-reset/verify-otp/',
-                'set_new_password': '/api/password-reset/set-new-password/',
+            "security": {
+                "encryption": "AES-256-GCM (client-side)",
+                "key_derivation": "Argon2id",
+                "authentication": "Zero-Knowledge (auth_hash only)",
+                "server_knowledge": "Server CANNOT decrypt vault data",
             },
-            'pin': {
-                'setup': '/api/pin/setup/',
-                'verify': '/api/pin/verify/',
-                'status': '/api/pin/status/',
-                'clear': '/api/pin/clear/',
-            },
-            'vault': {
-                'categories': '/api/categories/',
-                'vault': '/api/vault/',
-                'export': '/api/vault/export/',
-                'import': '/api/vault/import/',
-                'smart_import': '/api/vault/smart-import/',
-            },
-            'security': {
-                'health_score': '/api/security/health-score/',
-                'settings': '/api/security/settings/',
-                'sessions': '/api/sessions/',
-                'canary_traps': '/api/security/traps/',
-            },
-            'profile': '/api/profile/',
-            'dashboard': '/api/dashboard/statistics/',
-        },
-        'security': {
-            'encryption': 'AES-256-GCM (client-side)',
-            'key_derivation': 'Argon2id',
-            'authentication': 'Zero-Knowledge (auth_hash only)',
-            'server_knowledge': 'Server CANNOT decrypt vault data',
-        },
-    })
+        }
+    )
 
 
-# 
+#
 # USER PROFILE MANAGEMENT
-# 
+#
 
-@api_view(['GET'])
+
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_user_profile(request):
     """Get the profile of the authenticated user."""
     try:
         profile = request.user.userprofile
-        serializer = UserProfileSerializer(profile, context={'request': request})
+        serializer = UserProfileSerializer(profile, context={"request": request})
         return Response(serializer.data)
     except UserProfile.DoesNotExist:
-        return Response(
-            {"error": "Profile not found"},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        return Response({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
-@api_view(['PUT', 'PATCH'])
+@api_view(["PUT", "PATCH"])
 @permission_classes([IsAuthenticated])
 def update_user_profile(request):
     """Update the profile of the authenticated user."""
@@ -122,6 +123,6 @@ def update_user_profile(request):
         serializer.save()
         profile.refresh_from_db()
         profile.user.refresh_from_db()
-        response_serializer = UserProfileSerializer(profile, context={'request': request})
+        response_serializer = UserProfileSerializer(profile, context={"request": request})
         return Response(response_serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

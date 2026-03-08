@@ -27,14 +27,13 @@ import { webcrypto } from 'crypto';
 // @ts-ignore - Node.js util module
 import { TextEncoder, TextDecoder } from 'util';
 
-// Polyfill globalThis.crypto for Node.js environment
-if (typeof globalThis.crypto === 'undefined') {
-  Object.defineProperty(globalThis, 'crypto', {
-    value: webcrypto,
-    writable: false,
-    configurable: false
-  });
-}
+// Polyfill globalThis.crypto with Node's native webcrypto
+// This avoids JSDOM cross-realm ArrayBuffer issues with Web Crypto API
+Object.defineProperty(globalThis, 'crypto', {
+  value: webcrypto,
+  writable: true,
+  configurable: true
+});
 
 if (typeof globalThis.TextEncoder === 'undefined') {
   (globalThis as { TextEncoder: typeof TextEncoder }).TextEncoder = TextEncoder;

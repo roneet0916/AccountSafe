@@ -7,24 +7,21 @@ Views handle HTTP only; Services handle business logic.
 """
 
 from django.utils import timezone
-from api.models import (
-    UserProfile, Category, Organization, Profile, 
-    DuressSession, CuratedOrganization
-)
+from api.models import UserProfile, Category, Organization, Profile, DuressSession, CuratedOrganization
 
 import secrets
 
 
 class VaultService:
     """Service layer for vault operations."""
-    
+
     @staticmethod
     def is_duress_session(request) -> bool:
         """Check if the current request is from a duress token."""
-        if hasattr(request, 'auth') and hasattr(request.auth, 'key'):
+        if hasattr(request, "auth") and hasattr(request.auth, "key"):
             return DuressSession.is_duress_token(request.auth.key)
         return False
-    
+
     @staticmethod
     def get_fake_vault_data():
         """
@@ -58,10 +55,10 @@ class VaultService:
                                     "username": "user@example.com",
                                     "password": "netflix123",
                                     "email": "user@example.com",
-                                    "notes": ""
-                                }
+                                    "notes": "",
+                                },
                             }
-                        ]
+                        ],
                     },
                     {
                         "id": 99902,
@@ -84,12 +81,12 @@ class VaultService:
                                     "username": "musiclover42",
                                     "password": "spotify2023",
                                     "email": "user@example.com",
-                                    "notes": ""
-                                }
+                                    "notes": "",
+                                },
                             }
-                        ]
-                    }
-                ]
+                        ],
+                    },
+                ],
             },
             {
                 "id": 99902,
@@ -117,53 +114,48 @@ class VaultService:
                                     "username": "@randomuser123",
                                     "password": "twitter2023",
                                     "email": "user@example.com",
-                                    "notes": ""
-                                }
+                                    "notes": "",
+                                },
                             }
-                        ]
+                        ],
                     }
-                ]
-            }
+                ],
+            },
         ]
-    
+
     # ===========================
     # CATEGORY OPERATIONS
     # ===========================
-    
+
     @staticmethod
     def list_categories(user, is_duress: bool = False):
         """List all categories for a user."""
         if is_duress:
             return VaultService.get_fake_vault_data()
         return Category.objects.filter(user=user)
-    
+
     @staticmethod
     def create_category(user, name: str, description: str = None, is_duress: bool = False):
         """Create a new category."""
         if is_duress:
-            return {
-                "id": 99999,
-                "name": name,
-                "description": description or "",
-                "organizations": []
-            }
+            return {"id": 99999, "name": name, "description": description or "", "organizations": []}
         return Category.objects.create(user=user, name=name, description=description)
-    
+
     @staticmethod
     def get_category(pk: int, user, is_duress: bool = False):
         """Get a specific category."""
         if is_duress:
             fake_data = VaultService.get_fake_vault_data()
             for cat in fake_data:
-                if cat['id'] == pk:
+                if cat["id"] == pk:
                     return cat
             return None
-        
+
         try:
             return Category.objects.get(pk=pk, user=user)
         except Category.DoesNotExist:
             return None
-    
+
     @staticmethod
     def update_category(pk: int, user, data: dict, is_duress: bool = False):
         """Update a category."""
@@ -172,9 +164,9 @@ class VaultService:
                 "id": pk,
                 "name": data.get("name", "Updated Category"),
                 "description": data.get("description", ""),
-                "organizations": []
+                "organizations": [],
             }
-        
+
         try:
             category = Category.objects.get(pk=pk, user=user)
             for key, value in data.items():
@@ -184,40 +176,40 @@ class VaultService:
             return category
         except Category.DoesNotExist:
             return None
-    
+
     @staticmethod
     def delete_category(pk: int, user, is_duress: bool = False) -> bool:
         """Delete a category."""
         if is_duress:
             return True
-        
+
         try:
             category = Category.objects.get(pk=pk, user=user)
             category.delete()
             return True
         except Category.DoesNotExist:
             return False
-    
+
     # ===========================
     # ORGANIZATION OPERATIONS
     # ===========================
-    
+
     @staticmethod
     def list_organizations(category_id: int, user, is_duress: bool = False):
         """List all organizations for a category."""
         if is_duress:
             fake_data = VaultService.get_fake_vault_data()
             for cat in fake_data:
-                if cat['id'] == category_id:
-                    return cat.get('organizations', [])
+                if cat["id"] == category_id:
+                    return cat.get("organizations", [])
             return []
-        
+
         try:
             category = Category.objects.get(pk=category_id, user=user)
             return category.organizations.all()
         except Category.DoesNotExist:
             return None
-    
+
     @staticmethod
     def create_organization(category_id: int, user, data: dict, is_duress: bool = False):
         """Create a new organization."""
@@ -228,37 +220,37 @@ class VaultService:
                 "logo_url": data.get("logo_url"),
                 "logo_image": None,
                 "profile_count": 0,
-                "profiles": []
+                "profiles": [],
             }
-        
+
         try:
             category = Category.objects.get(pk=category_id, user=user)
             return Organization.objects.create(
                 category=category,
-                name=data.get('name', ''),
-                logo_url=data.get('logo_url'),
-                website_link=data.get('website_link'),
-                logo_image=data.get('logo_image')
+                name=data.get("name", ""),
+                logo_url=data.get("logo_url"),
+                website_link=data.get("website_link"),
+                logo_image=data.get("logo_image"),
             )
         except Category.DoesNotExist:
             return None
-    
+
     @staticmethod
     def get_organization(pk: int, user, is_duress: bool = False):
         """Get a specific organization."""
         if is_duress:
             fake_data = VaultService.get_fake_vault_data()
             for cat in fake_data:
-                for org in cat.get('organizations', []):
-                    if org['id'] == pk:
+                for org in cat.get("organizations", []):
+                    if org["id"] == pk:
                         return org
             return None
-        
+
         try:
             return Organization.objects.get(pk=pk, category__user=user)
         except Organization.DoesNotExist:
             return None
-    
+
     @staticmethod
     def update_organization(pk: int, user, data: dict, is_duress: bool = False):
         """Update an organization."""
@@ -269,9 +261,9 @@ class VaultService:
                 "logo_url": data.get("logo_url"),
                 "logo_image": None,
                 "profile_count": 1,
-                "profiles": []
+                "profiles": [],
             }
-        
+
         try:
             organization = Organization.objects.get(pk=pk, category__user=user)
             for key, value in data.items():
@@ -281,24 +273,24 @@ class VaultService:
             return organization
         except Organization.DoesNotExist:
             return None
-    
+
     @staticmethod
     def delete_organization(pk: int, user, is_duress: bool = False) -> bool:
         """Delete an organization."""
         if is_duress:
             return True
-        
+
         try:
             organization = Organization.objects.get(pk=pk, category__user=user)
             organization.delete()
             return True
         except Organization.DoesNotExist:
             return False
-    
+
     # ===========================
     # PROFILE OPERATIONS
     # ===========================
-    
+
     @staticmethod
     def list_profiles(organization_id: int, user, is_duress: bool = False):
         """
@@ -308,18 +300,18 @@ class VaultService:
         if is_duress:
             fake_data = VaultService.get_fake_vault_data()
             for cat in fake_data:
-                for org in cat.get('organizations', []):
-                    if org['id'] == organization_id:
-                        return org.get('profiles', [])
+                for org in cat.get("organizations", []):
+                    if org["id"] == organization_id:
+                        return org.get("profiles", [])
             return []
-        
+
         try:
             organization = Organization.objects.get(pk=organization_id, category__user=user)
             # Filter out trashed profiles
             return Profile.objects.filter(organization=organization, deleted_at__isnull=True)
         except Organization.DoesNotExist:
             return None
-    
+
     @staticmethod
     def create_profile(organization_id: int, user, data: dict, is_duress: bool = False):
         """Create a new profile."""
@@ -341,16 +333,16 @@ class VaultService:
                     "username": "newuser@example.com",
                     "password": "password123",
                     "email": "newuser@example.com",
-                    "notes": ""
-                }
+                    "notes": "",
+                },
             }
-        
+
         try:
             organization = Organization.objects.get(pk=organization_id, category__user=user)
             return Profile.objects.create(organization=organization, **data)
         except Organization.DoesNotExist:
             return None
-    
+
     @staticmethod
     def get_profile(pk: int, user, is_duress: bool = False):
         """
@@ -360,31 +352,25 @@ class VaultService:
         if is_duress:
             fake_data = VaultService.get_fake_vault_data()
             for cat in fake_data:
-                for org in cat.get('organizations', []):
-                    for profile in org.get('profiles', []):
-                        if profile['id'] == pk:
+                for org in cat.get("organizations", []):
+                    for profile in org.get("profiles", []):
+                        if profile["id"] == pk:
                             return profile
             return None
-        
+
         try:
             return Profile.objects.get(
-                pk=pk, 
-                organization__category__user=user,
-                deleted_at__isnull=True  # Exclude trashed profiles
+                pk=pk, organization__category__user=user, deleted_at__isnull=True  # Exclude trashed profiles
             )
         except Profile.DoesNotExist:
             return None
-    
+
     @staticmethod
     def update_profile(pk: int, user, data: dict, is_duress: bool = False):
         """Update a profile."""
         if is_duress:
-            return {
-                "id": pk,
-                "title": data.get("title", "Updated Profile"),
-                **data
-            }
-        
+            return {"id": pk, "title": data.get("title", "Updated Profile"), **data}
+
         try:
             profile = Profile.objects.get(pk=pk, organization__category__user=user)
             for key, value in data.items():
@@ -394,20 +380,20 @@ class VaultService:
             return profile
         except Profile.DoesNotExist:
             return None
-    
+
     @staticmethod
     def delete_profile(pk: int, user, is_duress: bool = False) -> bool:
         """Hard delete a profile (used internally)."""
         if is_duress:
             return True
-        
+
         try:
             profile = Profile.objects.get(pk=pk, organization__category__user=user)
             profile.delete()
             return True
         except Profile.DoesNotExist:
             return False
-    
+
     @staticmethod
     def soft_delete_profile(pk: int, user, is_duress: bool = False) -> bool:
         """
@@ -416,31 +402,28 @@ class VaultService:
         """
         if is_duress:
             return True
-        
+
         try:
             # Only soft-delete profiles that are NOT already in trash
-            profile = Profile.objects.get(
-                pk=pk, 
-                organization__category__user=user,
-                deleted_at__isnull=True
-            )
+            profile = Profile.objects.get(pk=pk, organization__category__user=user, deleted_at__isnull=True)
             profile.deleted_at = timezone.now()
             profile.save()
             return True
         except Profile.DoesNotExist:
             return False
-    
+
     @staticmethod
     def list_trash_profiles(user):
         """
         List all profiles in trash (soft-deleted) for a user.
         Returns only profiles where deleted_at is NOT null.
         """
-        return Profile.objects.filter(
-            organization__category__user=user,
-            deleted_at__isnull=False
-        ).select_related('organization', 'organization__category').order_by('-deleted_at')
-    
+        return (
+            Profile.objects.filter(organization__category__user=user, deleted_at__isnull=False)
+            .select_related("organization", "organization__category")
+            .order_by("-deleted_at")
+        )
+
     @staticmethod
     def restore_profile(pk: int, user) -> bool:
         """
@@ -449,34 +432,32 @@ class VaultService:
         """
         try:
             profile = Profile.objects.get(
-                pk=pk,
-                organization__category__user=user,
-                deleted_at__isnull=False  # Must be in trash
+                pk=pk, organization__category__user=user, deleted_at__isnull=False  # Must be in trash
             )
             profile.deleted_at = None
             profile.save()
             return True
         except Profile.DoesNotExist:
             return False
-    
+
     @staticmethod
     def shred_profile(pk: int, user) -> bool:
         """
         Permanently delete a profile with crypto-shredding.
-        
+
         SECURITY: Before deletion, all encrypted fields are overwritten
         with random data to prevent disk recovery attacks.
         """
         import os
-        
+
         try:
             # Can shred both active and trashed profiles
             profile = Profile.objects.get(pk=pk, organization__category__user=user)
-            
+
             # Crypto-shred: Overwrite all encrypted fields with random bytes
             # This prevents recovery of deleted data from disk sectors
             random_data = os.urandom(32).hex()
-            
+
             profile.username_encrypted = random_data
             profile.username_iv = random_data[:24]
             profile.password_encrypted = random_data
@@ -488,17 +469,17 @@ class VaultService:
             profile.recovery_codes_encrypted = random_data
             profile.recovery_codes_iv = random_data[:24]
             profile.password_hash = random_data[:64]
-            
+
             # Save the shredded data first (overwrites disk sectors)
             profile.save()
-            
+
             # Delete any associated documents
             if profile.document:
                 profile.document.delete(save=False)
-            
+
             # Now delete the record
             profile.delete()
-            
+
             return True
         except Profile.DoesNotExist:
             return False
@@ -506,7 +487,7 @@ class VaultService:
 
 class ZeroKnowledgeVaultService:
     """Service layer for zero-knowledge vault blob operations."""
-    
+
     @staticmethod
     def get_vault(user, is_duress: bool = False) -> dict:
         """Get user's encrypted vault blob."""
@@ -514,123 +495,123 @@ class ZeroKnowledgeVaultService:
             profile = user.userprofile
         except UserProfile.DoesNotExist:
             profile = UserProfile.objects.create(user=user)
-        
+
         response = {
-            'encryption_salt': profile.encryption_salt,
-            'vault_version': profile.vault_version,
-            'last_sync': profile.last_vault_sync,
+            "encryption_salt": profile.encryption_salt,
+            "vault_version": profile.vault_version,
+            "last_sync": profile.last_vault_sync,
         }
-        
+
         if is_duress:
-            response['vault_blob'] = profile.decoy_vault_blob
-            response['encryption_salt'] = profile.duress_salt
+            response["vault_blob"] = profile.decoy_vault_blob
+            response["encryption_salt"] = profile.duress_salt
         else:
-            response['vault_blob'] = profile.vault_blob
+            response["vault_blob"] = profile.vault_blob
             if profile.decoy_vault_blob:
-                response['has_duress_vault'] = True
-                response['duress_salt'] = profile.duress_salt
-        
+                response["has_duress_vault"] = True
+                response["duress_salt"] = profile.duress_salt
+
         return response
-    
+
     @staticmethod
-    def update_vault(user, vault_blob: str = None, decoy_vault_blob: str = None,
-                     duress_salt: str = None, is_duress: bool = False) -> dict:
+    def update_vault(
+        user, vault_blob: str = None, decoy_vault_blob: str = None, duress_salt: str = None, is_duress: bool = False
+    ) -> dict:
         """Update user's encrypted vault blob."""
         try:
             profile = user.userprofile
         except UserProfile.DoesNotExist:
             profile = UserProfile.objects.create(user=user)
-        
+
         if not vault_blob and not decoy_vault_blob:
-            return {'error': 'Either vault_blob or decoy_vault_blob is required', 'status': 400}
-        
+            return {"error": "Either vault_blob or decoy_vault_blob is required", "status": 400}
+
         if is_duress:
             # Pretend to save but don't modify real vault
             return {
-                'message': 'Vault updated successfully',
-                'last_sync': timezone.now().isoformat(),
+                "message": "Vault updated successfully",
+                "last_sync": timezone.now().isoformat(),
             }
-        
+
         if vault_blob:
             profile.vault_blob = vault_blob
             profile.last_vault_sync = timezone.now()
-        
+
         if decoy_vault_blob:
             profile.decoy_vault_blob = decoy_vault_blob
-        
+
         if duress_salt:
             profile.duress_salt = duress_salt
-        
+
         profile.save()
-        
+
         return {
-            'message': 'Vault updated successfully',
-            'last_sync': profile.last_vault_sync.isoformat() if profile.last_vault_sync else None,
+            "message": "Vault updated successfully",
+            "last_sync": profile.last_vault_sync.isoformat() if profile.last_vault_sync else None,
         }
-    
+
     @staticmethod
     def delete_vault(user, is_duress: bool = False) -> dict:
         """Delete user's vault."""
         try:
             profile = user.userprofile
         except UserProfile.DoesNotExist:
-            return {'error': 'No vault found', 'status': 404}
-        
+            return {"error": "No vault found", "status": 404}
+
         if is_duress:
-            return {'message': 'Vault deleted successfully'}
-        
+            return {"message": "Vault deleted successfully"}
+
         profile.vault_blob = None
         profile.decoy_vault_blob = None
         profile.duress_salt = None
         profile.last_vault_sync = None
         profile.save()
-        
-        return {'message': 'Vault deleted successfully'}
-    
+
+        return {"message": "Vault deleted successfully"}
+
     @staticmethod
     def export_vault(user, is_duress: bool = False) -> dict:
         """Export vault for backup."""
         try:
             profile = user.userprofile
         except UserProfile.DoesNotExist:
-            return {'error': 'No vault found', 'status': 404}
-        
+            return {"error": "No vault found", "status": 404}
+
         vault_blob = profile.decoy_vault_blob if is_duress else profile.vault_blob
-        
+
         if not vault_blob:
-            return {'error': 'No vault to export', 'status': 404}
-        
+            return {"error": "No vault to export", "status": 404}
+
         return {
-            'vault_blob': vault_blob,
-            'encryption_salt': profile.encryption_salt,
-            'vault_version': profile.vault_version,
-            'exported_at': timezone.now().isoformat(),
-            'username': user.username,
+            "vault_blob": vault_blob,
+            "encryption_salt": profile.encryption_salt,
+            "vault_version": profile.vault_version,
+            "exported_at": timezone.now().isoformat(),
+            "username": user.username,
         }
-    
+
     @staticmethod
-    def import_vault(user, vault_blob: str, encryption_salt: str = None,
-                     is_duress: bool = False) -> dict:
+    def import_vault(user, vault_blob: str, encryption_salt: str = None, is_duress: bool = False) -> dict:
         """Import vault from backup."""
         try:
             profile = user.userprofile
         except UserProfile.DoesNotExist:
             profile = UserProfile.objects.create(user=user)
-        
+
         if not vault_blob:
-            return {'error': 'vault_blob is required', 'status': 400}
-        
+            return {"error": "vault_blob is required", "status": 400}
+
         if is_duress:
-            return {'message': 'Vault imported successfully'}
-        
+            return {"message": "Vault imported successfully"}
+
         if encryption_salt and encryption_salt != profile.encryption_salt:
             profile.encryption_salt = encryption_salt
-        
+
         profile.vault_blob = vault_blob
         profile.last_vault_sync = timezone.now()
         profile.save()
-        
+
         return {
-            'message': 'Vault imported successfully',
-            'last_sync': profile.last_vault_sync.isoformat() if profile.last_vault_sync else None,
+            "message": "Vault imported successfully",
+            "last_sync": profile.last_vault_sync.isoformat() if profile.last_vault_sync else None,
         }
