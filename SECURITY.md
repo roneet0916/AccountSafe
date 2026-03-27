@@ -76,7 +76,7 @@ Canary Traps are "honey credentials" you can plant in exports or share intention
 
 #### Canary Traps Are Intentional (Not Vulnerabilities)
 
-If you are auditing AccountSafe and discover credentials that appear to trigger alerts, logging mechanisms, or "phone home" behavior—**this is by design**.
+If you are auditing AccountSafe and discover credentials that appear to trigger alerts, logging mechanisms, or "phone home" behavior-**this is by design**.
 
 **What you may observe:**
 - API endpoints at `/api/security/traps/` that create, list, and trigger honeytokens
@@ -99,7 +99,7 @@ If in doubt, reference [tests/CANARY_TRAP_TESTING.md](tests/CANARY_TRAP_TESTING.
 
 #### Duress Mode Is Intentional (Not a Backdoor)
 
-Similarly, if you discover a secondary authentication path that reveals different vault contents—**this is the Duress Mode (Ghost Vault) feature**.
+Similarly, if you discover a secondary authentication path that reveals different vault contents-**this is the Duress Mode (Ghost Vault) feature**.
 
 **What you may observe:**
 - `DuressSession` model tracking special authentication tokens

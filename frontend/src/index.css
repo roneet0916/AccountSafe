@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   AccountSafe Design System — MAANG-Grade Enterprise Security UI
-   Version 2.0 — Dark Theme Optimized
+   AccountSafe Design System - MAANG-Grade Enterprise Security UI
+   Version 2.0 - Dark Theme Optimized
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Font imports — Inter for modern SaaS aesthetic */
+/* Font imports - Inter for modern SaaS aesthetic */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -99,22 +99,22 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Dark Mode — Primary Theme for Security Applications
+   Dark Mode - Primary Theme for Security Applications
    ───────────────────────────────────────────────────────────────────────────── */
 .dark {
-  /* Background Layers — Deep, sophisticated blacks */
+  /* Background Layers - Deep, sophisticated blacks */
   --as-bg-base: #09090b;
   --as-bg-surface: #18181b;
   --as-bg-elevated: #27272a;
   --as-bg-subtle: #3f3f46;
   --as-bg-muted: #52525b;
   
-  /* Text Colors — High contrast for readability */
+  /* Text Colors - High contrast for readability */
   --as-text-primary: #fafafa;
   --as-text-secondary: #a1a1aa;
   --as-text-muted: #71717a;
   
-  /* Border Colors — Subtle definition */
+  /* Border Colors - Subtle definition */
   --as-border-default: #27272a;
   --as-border-subtle: #3f3f46;
   --as-border-strong: #52525b;
@@ -255,7 +255,7 @@ body {
 @layer components {
   
   /* ═══════════════════════════════════════════════════════════════════════════
-     Cards — Primary content containers
+     Cards - Primary content containers
      ═══════════════════════════════════════════════════════════════════════════ */
   
   .as-card {
@@ -299,7 +299,7 @@ body {
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     Buttons — Action hierarchy
+     Buttons - Action hierarchy
      ═══════════════════════════════════════════════════════════════════════════ */
   
   .as-btn {
@@ -402,7 +402,7 @@ body {
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     Inputs — Form controls
+     Inputs - Form controls
      ═══════════════════════════════════════════════════════════════════════════ */
   
   .as-input {
@@ -447,7 +447,7 @@ body {
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     Badges — Status indicators
+     Badges - Status indicators
      ═══════════════════════════════════════════════════════════════════════════ */
   
   .as-badge {
@@ -581,7 +581,7 @@ body {
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     Tables — Data display
+     Tables - Data display
      ═══════════════════════════════════════════════════════════════════════════ */
   
   .as-table {
@@ -616,7 +616,7 @@ body {
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     Credential Field — Copy-enabled fields
+     Credential Field - Copy-enabled fields
      ═══════════════════════════════════════════════════════════════════════════ */
   
   .as-credential-field {

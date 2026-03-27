@@ -107,7 +107,7 @@ class ZeroKnowledgeRegisterView(APIView):
                 {"error": "Invalid auth_hash format (expected 64 hex characters)"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Verify Turnstile token — mandatory in production
+        # Verify Turnstile token - mandatory in production
         if turnstile_token:
             remote_ip = get_client_ip(request)
             result = verify_turnstile_token(turnstile_token, remote_ip)
@@ -217,7 +217,7 @@ class ZeroKnowledgeLoginView(APIView):
         if not auth_hash:
             return Response({"error": "auth_hash is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Verify Turnstile token — mandatory in production
+        # Verify Turnstile token - mandatory in production
         if turnstile_token:
             remote_ip = get_client_ip(request)
             result = verify_turnstile_token(turnstile_token, remote_ip)

@@ -1,6 +1,6 @@
 # api/tests/test_zero_knowledge.py
 """
-Zero-Knowledge Authentication — Comprehensive Security Tests
+Zero-Knowledge Authentication - Comprehensive Security Tests
 ═══════════════════════════════════════════════════════════════════════════════
 
 Tests covering ALL ZK authentication endpoints:
@@ -291,7 +291,7 @@ class TestZeroKnowledgeRegisterView:
                 email=f"{secrets.token_hex(4)}@test.com",
             )
             resp = api_client.post(self.URL, payload, format="json")
-            # The server should not crash — it doesn't necessarily reject
+            # The server should not crash - it doesn't necessarily reject
             # but must not cause 500
             assert resp.status_code != status.HTTP_500_INTERNAL_SERVER_ERROR
 
@@ -314,7 +314,7 @@ class TestZeroKnowledgeRegisterView:
 
     @override_settings(DEBUG=True)
     def test_register_concurrent_same_username(self, api_client):
-        """Two simultaneous registrations with the same username — only one succeeds."""
+        """Two simultaneous registrations with the same username - only one succeeds."""
         salt = generate_salt()
         auth_hash = generate_auth_hash("password", salt)
         payload = {
@@ -540,8 +540,8 @@ class TestZeroKnowledgeLoginView:
         avg_no_user = sum(no_user_times) / len(no_user_times)
         delta = abs(avg_wrong - avg_no_user)
 
-        # 100ms tolerance — generous to avoid flaky CI
-        assert delta < 0.1, f"Timing delta {delta:.4f}s exceeds 100ms tolerance — potential timing side channel"
+        # 100ms tolerance - generous to avoid flaky CI
+        assert delta < 0.1, f"Timing delta {delta:.4f}s exceeds 100ms tolerance - potential timing side channel"
 
     @override_settings(DEBUG=True)
     def test_login_constant_time_comparison_used(self, api_client, create_zk_user):
@@ -633,7 +633,7 @@ class TestZeroKnowledgeLoginView:
             # Allow background thread to execute
             time.sleep(0.3)
 
-        # The alert is called in a daemon thread — we patched the target
+        # The alert is called in a daemon thread - we patched the target
         # so the thread calls our mock instead
         mock_alert.assert_called_once()
 
@@ -738,7 +738,7 @@ class TestZeroKnowledgeGetSaltView:
 
     @override_settings(DEBUG=True)
     def test_get_salt_no_authentication_required(self, api_client):
-        # No credentials set — should still work (AllowAny)
+        # No credentials set - should still work (AllowAny)
         resp = api_client.get(self.URL, {"username": "anyone"})
         assert resp.status_code == status.HTTP_200_OK
 
@@ -1402,6 +1402,6 @@ class TestZeroKnowledgeDeleteAccountView:
         assert resp1.status_code == status.HTTP_200_OK
         assert not User.objects.filter(username="delrace").exists()
 
-        # Second attempt fails — token invalidated by cascading delete
+        # Second attempt fails - token invalidated by cascading delete
         resp2 = api_client.post(self.URL, {"auth_hash": auth_hash}, format="json")
         assert resp2.status_code == status.HTTP_401_UNAUTHORIZED
