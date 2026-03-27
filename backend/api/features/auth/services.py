@@ -90,7 +90,7 @@ class AuthService:
         if len(auth_hash) != 64 or not all(c in "0123456789abcdef" for c in auth_hash.lower()):
             return {"error": "Invalid auth_hash format", "status": 400}
 
-        # Verify Turnstile — mandatory in production
+        # Verify Turnstile - mandatory in production
         if turnstile_token and request:
             remote_ip = get_client_ip(request)
             result = verify_turnstile_token(turnstile_token, remote_ip)
@@ -145,7 +145,7 @@ class AuthService:
         if not auth_hash:
             return {"error": "auth_hash is required", "status": 400}
 
-        # Verify Turnstile — mandatory in production
+        # Verify Turnstile - mandatory in production
         if turnstile_token and request:
             remote_ip = get_client_ip(request)
             result = verify_turnstile_token(turnstile_token, remote_ip)

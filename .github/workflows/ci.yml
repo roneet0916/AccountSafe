@@ -1,5 +1,5 @@
 # =============================================================================
-# AccountSafe — Continuous Integration Pipeline
+# AccountSafe - Continuous Integration Pipeline
 # =============================================================================
 # Triggers on pull requests to main/master branches.
 # Runs backend (Python/Django) and frontend (Node/React) checks concurrently.
@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   # ===========================================================================
-  # Backend Job — Python / Django / pytest / lint
+  # Backend Job - Python / Django / pytest / lint
   # ===========================================================================
   backend:
     name: Backend (Python)
@@ -103,7 +103,7 @@ jobs:
         run: pytest --tb=short -q
 
   # ===========================================================================
-  # Frontend Job — Node.js / React / ESLint / tests
+  # Frontend Job - Node.js / React / ESLint / tests
   # ===========================================================================
   frontend:
     name: Frontend (Node.js)
