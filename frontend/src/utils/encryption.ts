@@ -245,19 +245,11 @@ interface EncryptedCredentialData {
   notes_iv?: string | null;
   recovery_codes_encrypted?: string | null;
   recovery_codes_iv?: string | null;
-  _plaintext?: {
-    username?: string | null;
-    password?: string | null;
-    email?: string | null;
-    notes?: string | null;
-    recovery_codes?: string | null;
-  };
 }
 
 /**
  * Decrypt an object's encrypted fields
- * If the data contains a _plaintext field (for duress mode), use that directly
- * 
+ *
  * Optimized: Decrypts all fields in parallel for better performance
  */
 export async function decryptCredentialFields(
@@ -270,18 +262,6 @@ export async function decryptCredentialFields(
   notes?: string;
   recovery_codes?: string;
 }> {
-  // Check for plaintext data (used in duress mode with fake vault)
-  // The frontend is unaware it's in duress mode - it just sees data
-  if (encryptedData._plaintext) {
-    return {
-      username: encryptedData._plaintext.username ?? undefined,
-      password: encryptedData._plaintext.password ?? undefined,
-      email: encryptedData._plaintext.email ?? undefined,
-      notes: encryptedData._plaintext.notes ?? undefined,
-      recovery_codes: encryptedData._plaintext.recovery_codes ?? undefined,
-    };
-  }
-
   const fieldNames = ['username', 'password', 'email', 'notes', 'recovery_codes'] as const;
   
   type FieldName = typeof fieldNames[number];
@@ -331,13 +311,3 @@ export function storeMasterKey(_key: CryptoKey): void {
   // Note: Master key is stored in memory only (CryptoContext.tsx)
 }
 
-/**
- * Hash password for authentication (separate from encryption key derivation)
- * This is what gets sent to server for login verification
- */
-export async function hashPasswordForAuth(password: string, salt: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const passwordBuffer = encoder.encode(password + salt);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', passwordBuffer);
-  return arrayBufferToBase64(hashBuffer);
-}

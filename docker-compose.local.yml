@@ -62,6 +62,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.local
+      args:
+        REACT_APP_API_URL: "http://localhost/api/"
+        REACT_APP_TURNSTILE_SITE_KEY: "1x00000000000000000000AA"
     container_name: accountsafe-frontend-local
     restart: unless-stopped
     depends_on:

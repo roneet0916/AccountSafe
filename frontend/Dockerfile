@@ -16,6 +16,16 @@ RUN npm ci --silent
 # Copy source code
 COPY . .
 
+# React env vars must be present at build time (CRA inlines them)
+ARG REACT_APP_API_URL
+ARG REACT_APP_PROJECT_NAME=AccountSafe
+ARG REACT_APP_LOGO_URL=/account-safe-logo.png
+ARG REACT_APP_TURNSTILE_SITE_KEY
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV REACT_APP_PROJECT_NAME=$REACT_APP_PROJECT_NAME
+ENV REACT_APP_LOGO_URL=$REACT_APP_LOGO_URL
+ENV REACT_APP_TURNSTILE_SITE_KEY=$REACT_APP_TURNSTILE_SITE_KEY
+
 # Build the production application
 RUN npm run build
 
