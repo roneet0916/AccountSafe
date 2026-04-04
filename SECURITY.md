@@ -27,7 +27,7 @@ The server **never** has access to your plaintext credentials. Here's how it wor
 Master Password (client-side only)
         │
         ▼
-    PBKDF2 (600,000 iterations)
+    Argon2id (memory-hard KDF)
         │
    ┌────┴────┐
    ▼         ▼

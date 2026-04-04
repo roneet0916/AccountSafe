@@ -40,7 +40,7 @@ POST /api/zk/register/
 |-------|------|-------------|
 | `username` | string | Unique username |
 | `email` | string | Email address |
-| `auth_hash` | string | PBKDF2-derived authentication hash |
+| `auth_hash` | string | Argon2id-derived authentication hash |
 | `salt` | string | Base64-encoded salt for key derivation |
 | `turnstile_token` | string | Cloudflare Turnstile token (if enabled) |
 
@@ -67,7 +67,7 @@ POST /api/zk/login/
 | Field | Type | Description |
 |-------|------|-------------|
 | `username` | string | Username |
-| `auth_hash` | string | PBKDF2-derived authentication hash |
+| `auth_hash` | string | Argon2id-derived authentication hash |
 | `turnstile_token` | string | Cloudflare Turnstile token (if enabled) |
 
 **Response:** `200 OK`

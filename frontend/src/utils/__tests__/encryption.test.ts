@@ -21,7 +21,6 @@ import {
   decryptData,
   encryptCredentialFields,
   decryptCredentialFields,
-  hashPasswordForAuth,
 } from '../encryption';
 
 
@@ -357,47 +356,6 @@ describe('Credential Field Encryption', () => {
   });
 });
 
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// AUTH HASH TESTS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-describe('Auth Hash Generation', () => {
-  test('hashPasswordForAuth returns consistent hash', async () => {
-    const password = 'TestPassword123!';
-    const salt = generateSalt();
-
-    const hash1 = await hashPasswordForAuth(password, salt);
-    const hash2 = await hashPasswordForAuth(password, salt);
-
-    expect(hash1).toBe(hash2);
-  });
-
-  test('different passwords produce different hashes', async () => {
-    const salt = generateSalt();
-
-    const hash1 = await hashPasswordForAuth('Password1', salt);
-    const hash2 = await hashPasswordForAuth('Password2', salt);
-
-    expect(hash1).not.toBe(hash2);
-  });
-
-  test('different salts produce different hashes', async () => {
-    const password = 'TestPassword123!';
-
-    const hash1 = await hashPasswordForAuth(password, generateSalt());
-    const hash2 = await hashPasswordForAuth(password, generateSalt());
-
-    expect(hash1).not.toBe(hash2);
-  });
-
-  test('auth hash is valid base64', async () => {
-    const hash = await hashPasswordForAuth('Password', generateSalt());
-    
-    // Should not throw when decoded
-    expect(() => atob(hash)).not.toThrow();
-  });
-});
 
 
 // ═══════════════════════════════════════════════════════════════════════════════

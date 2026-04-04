@@ -51,12 +51,6 @@ class VaultService:
                                 "email_iv": "duress_fake_iv_3",
                                 "password_strength": 2,
                                 "is_breached": False,
-                                "_plaintext": {
-                                    "username": "user@example.com",
-                                    "password": "netflix123",
-                                    "email": "user@example.com",
-                                    "notes": "",
-                                },
                             }
                         ],
                     },
@@ -77,12 +71,6 @@ class VaultService:
                                 "email_iv": "duress_fake_iv_6",
                                 "password_strength": 2,
                                 "is_breached": False,
-                                "_plaintext": {
-                                    "username": "musiclover42",
-                                    "password": "spotify2023",
-                                    "email": "user@example.com",
-                                    "notes": "",
-                                },
                             }
                         ],
                     },
@@ -110,12 +98,6 @@ class VaultService:
                                 "email_iv": "duress_fake_iv_9",
                                 "password_strength": 2,
                                 "is_breached": False,
-                                "_plaintext": {
-                                    "username": "@randomuser123",
-                                    "password": "twitter2023",
-                                    "email": "user@example.com",
-                                    "notes": "",
-                                },
                             }
                         ],
                     }
@@ -329,12 +311,6 @@ class VaultService:
                 "notes_iv": data.get("notes_iv"),
                 "password_strength": data.get("password_strength", 0),
                 "is_breached": False,
-                "_plaintext": {
-                    "username": "newuser@example.com",
-                    "password": "password123",
-                    "email": "newuser@example.com",
-                    "notes": "",
-                },
             }
 
         try:
