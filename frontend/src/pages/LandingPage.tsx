@@ -18,7 +18,7 @@ const LandingPage: React.FC = () => {
             Welcome to <span className="text-primary dark:text-primary-400">AccountSafe</span>
           </h1>
           <p className="text-sm sm:text-base md:text-lg text-zinc-600 dark:text-zinc-400 mb-8 sm:mb-10 max-w-xl mx-auto px-4">
-            Protected by AES-256-GCM authenticated encryption with PBKDF2 key derivation. Our managed security architecture ensures your data is encrypted securely at rest
+            Protected by AES-256-GCM authenticated encryption with Argon2id key derivation. Our zero-knowledge architecture ensures your data is encrypted securely at rest
           </p>
           
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">

@@ -17,16 +17,16 @@ sequenceDiagram
 
     Note over U,B: ZERO KNOWLEDGE ZONE
     U->>B: Input Master Password
-    B->>B: PBKDF2 Key Derivation (Salt+Pass)
-    B->>B: Generate Auth Hash & Encryption Key
+    B->>B: Argon2id Key Derivation (Salt+Pass)
+    B->>B: Derive Auth Hash + Master Encryption Key
     
-    Note right of B: Key NEVER leaves Browser
+    Note right of B: Password & Key NEVER leave Browser
     
     B->>S: Send Auth Hash ONLY
     S->>DB: Verify Auth Hash
     DB-->>S: OK
-    S-->>B: Return Encrypted Data Blobs
-    B->>B: Decrypt Data with Key
+    S-->>B: Return Encrypted Vault Blob
+    B->>B: AES-256-GCM Decrypt with Master Key
     B-->>U: Display Vault
 ```
 
@@ -36,7 +36,7 @@ sequenceDiagram
 ## Features
 
 ### Zero-Knowledge Security
-- **Zero-Knowledge Encryption**: AES-256-GCM with PBKDF2 key derivation (600k iterations)
+- **Zero-Knowledge Encryption**: AES-256-GCM with Argon2id key derivation (memory-hard KDF)
 - **Zero-Knowledge Authentication**: Password never leaves your device; only derived `auth_hash` is transmitted
 - **Zero-Knowledge Export/Import**: Encrypted vault backup that only you can decrypt
 
@@ -120,7 +120,7 @@ cd frontend && npm install && npm start
 | Backend | Django 5.2 LTS, Django REST Framework 3.15.2 |
 | Database | PostgreSQL 15+ |
 | Encryption | AES-256-GCM (Web Crypto API) |
-| Key Derivation | PBKDF2 (600k iterations) / Argon2id |
+| Key Derivation | Argon2id (memory-hard) |
 | Auth | JWT with refresh rotation, Zero-Knowledge |
 | Deployment | Docker Compose, Nginx, Let's Encrypt |
 
