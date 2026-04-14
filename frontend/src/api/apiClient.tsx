@@ -8,6 +8,7 @@ const API_URL = process.env.REACT_APP_API_URL || 'https://accountsafe.pythonanyw
 const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
+    'ngrok-skip-browser-warning': '69420',
     'Content-Type': 'application/json',
   },
 });
