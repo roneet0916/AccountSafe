@@ -1,0 +1,29 @@
+version: '3.3'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: accountsafe-db
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: accountsafe-backend
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "80:8000"  # Server ka port 80 seedha API ko de rahe hain
+    env_file:
+      - .env
+    command: sh -c "python manage.py collectstatic --noinput && python manage.py migrate --noinput && gunicorn --bind 0.0.0.0:8000 --workers 3 core.wsgi:application"
+
+volumes:
+  postgres_data:
+    driver: local
