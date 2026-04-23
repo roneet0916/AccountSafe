@@ -93,18 +93,9 @@ services:
           memory: 2G
         reservations:
           memory: 512M
-    command: >
-      sh -c "python manage.py collectstatic --noinput &&
-             python manage.py migrate --noinput &&
-             gunicorn --bind 0.0.0.0:8000
-                      --workers ${GUNICORN_WORKERS:-3}
-                      --threads 2
-                      --worker-class gthread
-                      --worker-tmp-dir /dev/shm
-                      --access-logfile -
-                      --error-logfile -
-                      --capture-output
-                      core.wsgi:application"
+    # Uses the Dockerfile's default CMD (./docker-entrypoint.sh), which does
+    # collectstatic + migrate + gunicorn. No `command:` override here to avoid
+    # the YAML-folded-scalar bug that split gunicorn's flags across shell lines.
 
   nginx:
     image: nginx:1.27-alpine
