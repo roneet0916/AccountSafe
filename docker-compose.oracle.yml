@@ -90,7 +90,13 @@ services:
       - static_files:/app/staticfiles
       - media_files:/app/media
     networks:
+      # `internal` for DB access (DB stays unreachable from the internet).
+      # `external` so the backend itself can make OUTBOUND calls to
+      # Cloudflare Turnstile, Gmail SMTP, Sentry, HaveIBeenPwned, etc.
+      # (The backend never publishes its port, so outbound access here
+      # does not expose it to inbound internet traffic.)
       - internal
+      - external
     deploy:
       resources:
         limits:
