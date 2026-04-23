@@ -12,6 +12,10 @@ export interface BrandSearchResult {
 
 const BRANDFETCH_API_KEY = process.env.REACT_APP_BRANDFETCH_API_KEY || '';
 
+// Same base URL as apiClient; kept standalone here so these helpers don't pull
+// in axios interceptors (they don't need auth).
+const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:8000/api/').replace(/\/+$/, '');
+
 /**
  * Search for brands using the Hybrid API (Local DB + Clearbit)
  * Falls back to local patterns if API fails
@@ -32,7 +36,7 @@ export const searchBrands = async (query: string): Promise<BrandSearchResult[]> 
   try {
     // Use the hybrid search API (Local Database + Clearbit)
     const response = await fetch(
-      `http://localhost:8000/api/organizations/search/?q=${encodeURIComponent(query)}`
+      `${API_BASE}/organizations/search/?q=${encodeURIComponent(query)}`
     );
 
     if (response.ok) {
@@ -105,7 +109,7 @@ export const lookupOrganizationByUrl = async (url: string): Promise<BrandSearchR
 
   try {
     const response = await fetch(
-      `http://localhost:8000/api/organizations/lookup/?url=${encodeURIComponent(url.trim())}`
+      `${API_BASE}/organizations/lookup/?url=${encodeURIComponent(url.trim())}`
     );
 
     if (response.ok) {

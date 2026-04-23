@@ -1,6 +1,6 @@
 """
 Django settings for the core project.
-Production-ready configuration for AWS deployment.
+Production-ready configuration for Oracle Cloud (backend) + Vercel (frontend).
 """
 
 import os
@@ -44,15 +44,20 @@ else:
 # PRODUCTION SECURITY MIDDLEWARE (when DEBUG=False)
 # =============================================================================
 if not DEBUG:
-    # HTTPS/SSL Settings
-    SECURE_SSL_REDIRECT = True
+    # HTTPS/SSL Settings (behind Nginx reverse proxy)
+    SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "True").lower() in ("true", "1", "yes")
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    USE_X_FORWARDED_HOST = True
+    USE_X_FORWARDED_PORT = True
 
     # Cookie Security
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     CSRF_COOKIE_HTTPONLY = True
+    # SameSite=None + Secure required for cross-site cookies (Vercel -> Oracle API)
+    SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "None")
+    CSRF_COOKIE_SAMESITE = os.getenv("CSRF_COOKIE_SAMESITE", "None")
 
     # HSTS (HTTP Strict Transport Security)
     SECURE_HSTS_SECONDS = 31536000  # 1 year
@@ -63,6 +68,14 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
     X_FRAME_OPTIONS = "DENY"
+
+# CSRF trusted origins: required for Django admin + any unsafe method when the
+# frontend sits on a different origin (Vercel) than the API (Oracle VM).
+csrf_trusted_str = os.getenv("CSRF_TRUSTED_ORIGINS", "")
+if csrf_trusted_str:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in csrf_trusted_str.split(",") if o.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = []
 
 # --- Application Definitions ---
 INSTALLED_APPS = [
@@ -210,15 +223,18 @@ else:
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = False
 
-# Regex patterns for dynamic subdomains (Vercel previews, etc.)
+# Regex patterns for dynamic subdomains (Vercel previews, LAN dev hosts).
+# Vercel creates a unique URL per PR preview; we must allow the whole subdomain
+# family in production, not just DEBUG.
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://accountsafe.*\.vercel\.app$",
+    r"^https://.*-pankaj-binds-projects\.vercel\.app$",
+]
 if DEBUG:
-    CORS_ALLOWED_ORIGIN_REGEXES = [
-        r"^https://accountsafe.*\.vercel\.app$",
+    CORS_ALLOWED_ORIGIN_REGEXES += [
         r"^http://10\.\d{1,3}\.\d{1,3}\.\d{1,3}:3000$",
         r"^http://192\.168\.\d{1,3}\.\d{1,3}:3000$",
     ]
-else:
-    CORS_ALLOWED_ORIGIN_REGEXES = []
 
 # =============================================================================
 # LOGGING CONFIGURATION (Production-Ready Structured JSON)

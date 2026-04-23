@@ -32,6 +32,7 @@ frontend/dist/
 .env.*
 !.env.example
 !.env.production.example
+!.env.oracle.example
 *.env
 *.env.local
 backend/.env
