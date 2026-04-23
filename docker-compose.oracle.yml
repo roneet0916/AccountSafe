@@ -124,8 +124,18 @@ services:
           memory: 512M
         reservations:
           memory: 128M
-    # Reload nginx every 6h so renewed certs are picked up without downtime.
-    command: '/bin/sh -c ''while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g "daemon off;"'''
+    # The nginx:alpine entrypoint only runs its init scripts (including
+    # template rendering via envsubst) when $1 is `nginx` or `nginx-debug`.
+    # We override CMD with /bin/sh, so we must render templates ourselves
+    # before starting nginx. We also keep a 6-hour reload loop so certbot's
+    # renewed Let's Encrypt certs are picked up without restarting.
+    command:
+      - /bin/sh
+      - -c
+      - |
+        envsubst '$$DOMAIN' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf
+        { while :; do sleep 6h & wait $${!}; nginx -s reload 2>/dev/null || true; done; } &
+        exec nginx -g 'daemon off;'
 
   certbot:
     image: certbot/certbot:latest
