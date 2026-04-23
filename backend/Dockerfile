@@ -49,7 +49,8 @@ COPY --chown=appuser:appgroup . .
 
 # Create directories for static and media files
 RUN mkdir -p staticfiles media && \
-    chown -R appuser:appgroup staticfiles media
+    chown -R appuser:appgroup staticfiles media && \
+    chmod +x docker-entrypoint.sh
 
 # Switch to non-root user
 USER appuser
@@ -61,5 +62,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/')" || exit 1
 
-# Run gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--threads", "2", "core.wsgi:application"]
+# Run collectstatic + migrate + gunicorn via a real script (avoids YAML
+# quoting bugs when compose overrides `command:` with multi-line sh -c).
+CMD ["./docker-entrypoint.sh"]
