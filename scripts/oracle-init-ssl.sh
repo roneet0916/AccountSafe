@@ -23,13 +23,24 @@ STAGING="${STAGING:-0}"       # STAGING=1 ./scripts/oracle-init-ssl.sh to dry-ru
 RSA_KEY_SIZE=4096
 
 [[ -f .env ]] || die ".env not found. Run: cp .env.oracle.example .env && edit it."
-# shellcheck disable=SC1091
-set -a; source .env; set +a
 
-[[ -n "${DOMAIN:-}" ]]            || die "DOMAIN is not set in .env"
-[[ -n "${LETSENCRYPT_EMAIL:-}" ]] || die "LETSENCRYPT_EMAIL is not set in .env"
-[[ "$DOMAIN" != "accountsafe.duckdns.org" || "${FORCE:-0}" == "1" ]] || \
-    warn "DOMAIN is still the example value; set FORCE=1 to proceed anyway."
+# Parse .env without `source`-ing it. Sourcing fails if values contain spaces
+# or shell metacharacters (e.g. Gmail app passwords displayed as "abcd efgh
+# ijkl mnop", or SECRET_KEY values with '#'/'$'). Here we only need two keys,
+# so grep them out literally.
+get_env() {
+    local key="$1"
+    grep -E "^${key}=" .env | head -n1 | cut -d= -f2- \
+        | sed -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'$/\1/"
+}
+
+DOMAIN="$(get_env DOMAIN)"
+LETSENCRYPT_EMAIL="$(get_env LETSENCRYPT_EMAIL)"
+
+[[ -n "$DOMAIN" ]]            || die "DOMAIN is not set in .env"
+[[ -n "$LETSENCRYPT_EMAIL" ]] || die "LETSENCRYPT_EMAIL is not set in .env"
+[[ "$DOMAIN" != "your-subdomain.duckdns.org" || "${FORCE:-0}" == "1" ]] || \
+    die "DOMAIN is still the placeholder value. Edit .env first (or set FORCE=1)."
 
 command -v docker >/dev/null || die "docker is not installed."
 
