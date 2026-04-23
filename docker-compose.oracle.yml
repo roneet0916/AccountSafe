@@ -1,0 +1,206 @@
+# =============================================================================
+# AccountSafe - Oracle Cloud Production Compose (API-only)
+# =============================================================================
+# Hosts:
+#   - Frontend:  Vercel (accountsafe.vercel.app) - NOT deployed here
+#   - Backend :  Oracle Cloud Ampere A1 VM (this file)
+#
+# Services on VM:
+#   db       -> Postgres 15 (internal network, not published)
+#   backend  -> Django + Gunicorn (internal network, not published)
+#   nginx    -> TLS termination + reverse proxy for api.<domain> (80/443 public)
+#   certbot  -> Let's Encrypt auto-renewal
+#   backup   -> Automated Postgres dumps (every 6h, 7-day retention)
+#
+# Usage:
+#   cp .env.oracle.example .env
+#   # edit .env (DOMAIN, SECRET_KEY, DB_PASSWORD, etc.)
+#   make oracle-ssl-init       # one time, requires DNS already pointing here
+#   make oracle-up
+# =============================================================================
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: accountsafe-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-accountsafe}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-accountsafe}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          memory: 256M
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: accountsafe-backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DEBUG: "False"
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+      # DOMAIN is the API hostname (e.g. accountsafe.duckdns.org or 140-245-20-107.sslip.io).
+      # We always allow the raw IP too so container health checks still work.
+      ALLOWED_HOSTS: ${DOMAIN},${PUBLIC_IP},backend,localhost,127.0.0.1
+      # Vercel (production) + previews are handled by CORS_ALLOWED_ORIGIN_REGEXES in settings.py,
+      # but explicit pinned origins go here.
+      CORS_ALLOWED_ORIGINS: ${FRONTEND_ORIGIN:-https://accountsafe.vercel.app}
+      # CSRF trust for cross-origin unsafe methods + admin login over HTTPS.
+      CSRF_TRUSTED_ORIGINS: https://${DOMAIN},${FRONTEND_ORIGIN:-https://accountsafe.vercel.app}
+
+      DB_NAME: ${DB_NAME:-accountsafe}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      DB_HOST: db
+      DB_PORT: "5432"
+
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-}
+
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      APP_VERSION: ${APP_VERSION:-1.0.0}
+    volumes:
+      - static_files:/app/staticfiles
+      - media_files:/app/media
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          memory: 512M
+    command: >
+      sh -c "python manage.py collectstatic --noinput &&
+             python manage.py migrate --noinput &&
+             gunicorn --bind 0.0.0.0:8000
+                      --workers ${GUNICORN_WORKERS:-3}
+                      --threads 2
+                      --worker-class gthread
+                      --worker-tmp-dir /dev/shm
+                      --access-logfile -
+                      --error-logfile -
+                      --capture-output
+                      core.wsgi:application"
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: accountsafe-nginx
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.oracle.conf:/etc/nginx/templates/default.conf.template:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+      - static_files:/app/staticfiles:ro
+      - media_files:/app/media:ro
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN is required}
+    networks:
+      - internal
+      - external
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          memory: 128M
+    # Reload nginx every 6h so renewed certs are picked up without downtime.
+    command: '/bin/sh -c ''while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g "daemon off;"'''
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: accountsafe-certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done;'"
+    networks:
+      - external
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          memory: 64M
+
+  backup:
+    image: prodrigestivill/postgres-backup-local:15-alpine
+    container_name: accountsafe-backup
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: ${DB_NAME:-accountsafe}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      SCHEDULE: "0 */6 * * *"
+      BACKUP_KEEP_DAYS: 7
+      BACKUP_KEEP_WEEKS: 4
+      BACKUP_KEEP_MONTHS: 3
+      BACKUP_SUFFIX: .sql.gz
+      HEALTHCHECK_PORT: 8080
+    volumes:
+      - ./backups:/backups
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          memory: 64M
+
+networks:
+  internal:
+    driver: bridge
+    internal: true
+  external:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  static_files:
+    driver: local
+  media_files:
+    driver: local

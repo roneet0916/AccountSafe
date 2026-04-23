@@ -2,8 +2,15 @@
 import axios from 'axios';
 import { forceLogout } from '../utils/logoutEvent';
 
-// Use environment variable or fallback to production backend
-const API_URL = process.env.REACT_APP_API_URL || 'https://accountsafe.pythonanywhere.com/api/';
+// API base URL. Set REACT_APP_API_URL at build time (Vercel env var) to the
+// Oracle backend, e.g. https://accountsafe.duckdns.org/api/ . Localhost is used
+// only for dev; production builds without the env var are considered a
+// misconfiguration and fail loudly in the browser console.
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/';
+if (!process.env.REACT_APP_API_URL && process.env.NODE_ENV === 'production') {
+  // eslint-disable-next-line no-console
+  console.error('REACT_APP_API_URL is not set; API calls will fail in production.');
+}
 
 const apiClient = axios.create({
   baseURL: API_URL,
