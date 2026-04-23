@@ -49,6 +49,10 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     USE_X_FORWARDED_HOST = True
     USE_X_FORWARDED_PORT = True
+    # The Docker HEALTHCHECK curls http://localhost:8000/api/health/ directly
+    # (not via nginx), so there's no X-Forwarded-Proto and Django would 301
+    # to HTTPS -- breaking the check. Exempt health endpoints.
+    SECURE_REDIRECT_EXEMPT = [r"^api/health/?$", r"^health/?$"]
 
     # Cookie Security
     SESSION_COOKIE_SECURE = True
@@ -147,6 +151,11 @@ else:
             "PASSWORD": os.getenv("DB_PASSWORD", "postgres"),
             "HOST": os.getenv("DB_HOST", "localhost"),
             "PORT": os.getenv("DB_PORT", "5432"),
+            # Reuse Postgres connections across requests for 60s. Without this,
+            # Django opens a fresh TCP + auth per request (~50-100ms overhead,
+            # very visible when BE is in Mumbai and FE is on Vercel edge).
+            "CONN_MAX_AGE": int(os.getenv("DB_CONN_MAX_AGE", "60")),
+            "CONN_HEALTH_CHECKS": True,
             "OPTIONS": {
                 "options": "-c search_path=public",
             },
@@ -222,6 +231,10 @@ else:
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = False
+# Cache CORS preflight responses for 24h on the browser side. Without this,
+# every cross-origin POST from Vercel -> Oracle does an OPTIONS preflight
+# (adds one full RTT on every request).
+CORS_PREFLIGHT_MAX_AGE = 86400
 
 # Regex patterns for dynamic subdomains (Vercel previews, LAN dev hosts).
 # Vercel creates a unique URL per PR preview; we must allow the whole subdomain

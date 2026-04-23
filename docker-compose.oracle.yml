@@ -81,6 +81,11 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
       APP_VERSION: ${APP_VERSION:-1.0.0}
+      # Gunicorn sizing. Ampere A1 (4 OCPU) easily handles 4 workers x 4
+      # threads = 16 concurrent. Override in .env if needed.
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-4}
+      GUNICORN_THREADS: ${GUNICORN_THREADS:-4}
+      DB_CONN_MAX_AGE: ${DB_CONN_MAX_AGE:-60}
     volumes:
       - static_files:/app/staticfiles
       - media_files:/app/media
