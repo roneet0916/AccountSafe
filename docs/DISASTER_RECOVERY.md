@@ -184,25 +184,38 @@ curl http://localhost:8000/api/health/
 
 **Local backups are not enough.** If the server burns down, you lose everything.
 
-### Option 1: AWS S3 (Recommended)
+### Option 1: Oracle Object Storage (Recommended on Oracle Cloud)
 
-Add to host machine's crontab:
+From the VM (assumes OCI CLI configured once with `oci setup config`):
 
 ```bash
-# Edit crontab
 crontab -e
 
-# Add this line (syncs every hour)
+# Syncs every hour to an OCI Object Storage bucket
+0 * * * * oci os object bulk-upload \
+    --bucket-name accountsafe-backups \
+    --src-dir /home/ubuntu/AccountSafe/backups \
+    --overwrite
+```
+
+Always-Free tier includes 20 GB of Object Storage, which comfortably fits years of compressed dumps.
+
+### Option 2: AWS S3
+
+```bash
+crontab -e
+
+# Syncs every hour
 0 * * * * aws s3 sync /path/to/AccountSafe/backups s3://your-bucket/accountsafe-backups/ --delete
 ```
 
-### Option 2: Google Cloud Storage
+### Option 3: Google Cloud Storage
 
 ```bash
 0 * * * * gsutil -m rsync -r /path/to/AccountSafe/backups gs://your-bucket/accountsafe-backups/
 ```
 
-### Option 3: Rclone (Any Cloud)
+### Option 4: Rclone (Any Cloud)
 
 ```bash
 # Configure rclone first
@@ -212,7 +225,7 @@ rclone config
 0 * * * * rclone sync /path/to/AccountSafe/backups remote:accountsafe-backups/
 ```
 
-### Option 4: Rsync to Remote Server
+### Option 5: Rsync to Remote Server
 
 ```bash
 0 * * * * rsync -avz --delete /path/to/AccountSafe/backups/ user@backup-server:/backups/accountsafe/
@@ -221,6 +234,9 @@ rclone config
 ### Verify Off-site Backups
 
 ```bash
+# OCI Object Storage
+oci os object list --bucket-name accountsafe-backups --all | tail -20
+
 # AWS S3
 aws s3 ls s3://your-bucket/accountsafe-backups/ --recursive | tail -10
 
@@ -242,9 +258,9 @@ docker ps -a | grep backup
 docker logs accountsafe-backup
 
 # Common fix: Ensure DB is healthy first
-docker-compose -f docker-compose.prod.yml up -d db
+docker-compose -f docker-compose.oracle.yml up -d db
 sleep 10
-docker-compose -f docker-compose.prod.yml up -d backup
+docker-compose -f docker-compose.oracle.yml up -d backup
 ```
 
 ### "No backup files found"
@@ -263,8 +279,9 @@ docker exec accountsafe-backup /backup.sh
 ### Restore fails with "database in use"
 
 ```bash
-# Force stop all services except DB
-docker-compose -f docker-compose.prod.yml stop backend frontend
+# Force stop every service except DB (frontend lives on Vercel, so no
+# frontend container is running on the VM)
+docker-compose -f docker-compose.oracle.yml stop backend nginx
 
 # Try restore again
 ./scripts/restore.sh
@@ -288,7 +305,7 @@ docker exec accountsafe-backend python manage.py migrate
 docker exec accountsafe-backend python manage.py collectstatic --noinput
 
 # Restart backend
-docker-compose -f docker-compose.prod.yml restart backend
+docker-compose -f docker-compose.oracle.yml restart backend
 ```
 
 ---

@@ -27,11 +27,13 @@ cp backend/.env.example backend/.env
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `SECRET_KEY` | Django secret key. Must be at least 64 characters, cryptographically random. | `your-64-char-random-string` |
+| `SECRET_KEY` | Django secret key. Must be at least 50 characters, cryptographically random. | `your-50-char-random-string` |
 | `DEBUG` | Enable debug mode. Must be `False` in production. | `False` |
-| `ALLOWED_HOSTS` | Comma-separated list of permitted hostnames. | `yourdomain.com,www.yourdomain.com` |
-| `DATABASE_URL` | PostgreSQL connection string. | `postgres://user:pass@db:5432/accountsafe` |
-| `CORS_ALLOWED_ORIGINS` | Comma-separated list of permitted CORS origins. | `https://yourdomain.com` |
+| `ALLOWED_HOSTS` | Comma-separated list of permitted hostnames. | `api.yourdomain.com,accountsafe.duckdns.org` |
+| `DB_HOST` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `DB_PORT` | PostgreSQL connection parameters. | `db` / `accountsafe` / `accountsafe` / `...` / `5432` |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated list of permitted CORS origins. Vercel production URL. | `https://accountsafe.vercel.app` |
+| `CSRF_TRUSTED_ORIGINS` | Origins trusted for CSRF-protected requests (Django admin + unsafe methods). | `https://accountsafe.duckdns.org,https://accountsafe.vercel.app` |
+| `ENCRYPTION_KEY` | Fernet key for server-side encryption of sensitive profile fields. | `<generated Fernet key>` |
 
 ### Optional Variables
 
@@ -69,15 +71,17 @@ BACKUP_KEEP_DAYS=14
 
 ### Database Configuration
 
-For local development (SQLite):
-```
-# No DATABASE_URL needed; Django defaults to SQLite
+AccountSafe uses discrete `DB_*` variables (not a single `DATABASE_URL`):
+
+```bash
+DB_NAME=accountsafe
+DB_USER=accountsafe
+DB_PASSWORD=<generated via `openssl rand -base64 32`>
+DB_HOST=db         # service name inside docker-compose
+DB_PORT=5432
 ```
 
-For production (PostgreSQL):
-```
-DATABASE_URL=postgres://accountsafe_user:strong_password@db:5432/accountsafe
-```
+For local development without Docker, set `DB_ENGINE=sqlite3` to skip Postgres entirely — Django falls back to a local SQLite file.
 
 PostgreSQL connection parameters:
 
@@ -150,10 +154,8 @@ REACT_APP_TURNSTILE_SITE_KEY=0x4AAAAAAxxxxxxx
 
 | File | Purpose |
 |------|---------|
-| `docker-compose.yml` | Base configuration |
-| `docker-compose.local.yml` | Local development |
-| `docker-compose.dev.yml` | Development with hot reload |
-| `docker-compose.prod.yml` | Production deployment |
+| `docker-compose.local.yml` | Local development (full stack in Docker) |
+| `docker-compose.oracle.yml` | Production deployment on Oracle Cloud VM (backend-only; frontend is on Vercel) |
 
 ### Service Configuration
 
@@ -174,13 +176,16 @@ backend:
 
 #### Frontend Service
 
+The frontend is only containerized for local development (`docker-compose.local.yml`). In production it is hosted on Vercel directly from the `frontend/` directory of the repo — no container runs on the Oracle VM.
+
 ```yaml
+# Local development only
 frontend:
   build: ./frontend
   environment:
     - REACT_APP_API_URL=${REACT_APP_API_URL}
   ports:
-    - "3000:80"  # Development
+    - "3000:80"
 ```
 
 #### Database Service
@@ -325,18 +330,38 @@ CORS_ALLOWED_ORIGINS=http://localhost:3000
 REACT_APP_API_URL=http://localhost:8000/api
 ```
 
-### Production (.env.production)
+### Production
+
+The backend uses `.env` on the Oracle VM (template: `.env.oracle.example` at the repo root):
 
 ```bash
-# Backend
-SECRET_KEY=<generate-64-char-random-string>
-DEBUG=False
-ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
-DATABASE_URL=postgres://user:pass@db:5432/accountsafe
-CORS_ALLOWED_ORIGINS=https://yourdomain.com
-TURNSTILE_SECRET_KEY=<your-turnstile-secret>
+# Public hostname + VM IP
+DOMAIN=accountsafe.duckdns.org
+PUBLIC_IP=<your-vm-ip>
+LETSENCRYPT_EMAIL=you@example.com
+FRONTEND_ORIGIN=https://accountsafe.vercel.app
 
-# Frontend
-REACT_APP_API_URL=https://yourdomain.com/api
-REACT_APP_TURNSTILE_SITE_KEY=<your-turnstile-site-key>
+# Django
+SECRET_KEY=<50-char random string>
+ENCRYPTION_KEY=<Fernet key>
+DEBUG=False
+
+# Database (Postgres container on same VM)
+DB_NAME=accountsafe
+DB_USER=accountsafe
+DB_PASSWORD=<strong random password>
+
+# Email + Turnstile
+EMAIL_HOST_USER=<gmail>
+EMAIL_HOST_PASSWORD=<gmail app password>
+DEFAULT_FROM_EMAIL=AccountSafe <gmail>
+TURNSTILE_SECRET_KEY=<cloudflare turnstile secret>
+```
+
+The frontend's environment is set in the **Vercel dashboard** (Project Settings → Environment Variables), not in a local file:
+
+```bash
+REACT_APP_API_URL=https://accountsafe.duckdns.org/api/
+REACT_APP_TURNSTILE_SITE_KEY=<cloudflare turnstile site key>
+REACT_APP_PROJECT_NAME=AccountSafe
 ```

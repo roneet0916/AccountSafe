@@ -266,29 +266,64 @@ npm test -- --watchAll=false --coverage  # with coverage
 
 ## Production Deployment
 
+Production is split across two hosts:
+
+| Layer | Host | URL |
+|-------|------|-----|
+| Frontend (React SPA) | Vercel | `https://<project>.vercel.app` |
+| Backend (Django + Postgres + Nginx + Certbot) | Oracle Cloud VM | `https://<hostname>` (DuckDNS / custom domain) |
+
+Auto-deploy on push to `main` is wired via GitHub Actions — see `.github/workflows/deploy-oracle.yml`.
+
+### Backend — Oracle Cloud VM
+
+Prerequisites: Ubuntu 22.04 VM with ports 80/443 open (in both the OCI Security List and host firewall), and a hostname that resolves to the VM's public IP (a DuckDNS subdomain works and gives you a free Let's Encrypt cert).
+
+One-time bootstrap on a fresh VM:
+
 ```bash
 git clone https://github.com/pankaj-bind/AccountSafe.git
 cd AccountSafe
-
-# Configure environment files
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-
-# Initialise Let's Encrypt certificates
-make init-ssl
-
-# First deployment (builds images)
-docker compose -f docker-compose.prod.yml up -d --build
-
-# Subsequent runs
-docker compose -f docker-compose.prod.yml up -d
+make oracle-bootstrap          # Docker + swap + ufw + fail2ban
+cp .env.oracle.example .env
+nano .env                      # fill DOMAIN, SECRET_KEY, DB_PASSWORD, etc.
+make oracle-ssl-init           # issue Let's Encrypt cert for $DOMAIN
+make oracle-up                 # start the stack
 ```
 
-> All dependencies are strictly pinned to prevent supply chain attacks. Always use `--build` after pulling new commits.
+Day-to-day:
 
-**Migrating from another server:**
 ```bash
-# Copy the backups/ folder from the old server, then:
+make oracle-deploy             # git pull + rebuild + migrate + restart
+make oracle-logs               # tail all services
+make oracle-shell              # shell inside the backend container
+make oracle-backup             # trigger an immediate DB dump
+```
+
+Services started by `docker-compose.oracle.yml`:
+- `db` — Postgres 15 (internal network only, not exposed)
+- `backend` — Django + Gunicorn (internal network, reachable only via nginx)
+- `nginx` — TLS termination + reverse proxy on 80/443
+- `certbot` — Let's Encrypt auto-renewal every 12h
+- `backup` — scheduled Postgres dumps to `./backups/`
+
+### Frontend — Vercel
+
+In the Vercel project settings:
+
+1. **Root Directory**: `frontend`
+2. **Environment Variables** (Production + Preview scopes):
+   - `REACT_APP_API_URL` — `https://<your-backend-hostname>/api/`
+   - `REACT_APP_TURNSTILE_SITE_KEY` — Cloudflare Turnstile **site** key (not secret)
+   - `REACT_APP_PROJECT_NAME` — `AccountSafe`
+3. Push to `main` → Vercel rebuilds automatically.
+
+> The `REACT_APP_API_URL` is baked into the bundle at build time; changing the backend URL requires a Vercel rebuild, not just a backend restart.
+
+### Migrating from another server
+
+```bash
+# Copy the backups/ folder from the old server to ./backups/, then:
 ./scripts/restore.sh
 ```
 
@@ -304,7 +339,7 @@ docker compose -f docker-compose.prod.yml up -d
 | Encryption | AES-256-GCM (Web Crypto API) |
 | Key Derivation | Argon2id (memory-hard) |
 | Auth | JWT with refresh rotation, Zero-Knowledge |
-| Deployment | Docker Compose, Nginx, Let's Encrypt |
+| Deployment | Vercel (frontend), Oracle Cloud + Docker Compose + Nginx + Let's Encrypt (backend) |
 
 > **Dependency policy:** All versions are pinned exactly - no `^` or `~` - to prevent supply chain attacks via automatic upgrades. See [CONTRIBUTING.md](CONTRIBUTING.md).
 

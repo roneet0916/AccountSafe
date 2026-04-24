@@ -25,16 +25,16 @@ This guide covers day-to-day operations, monitoring, backups, and troubleshootin
 
 ```bash
 # Start all services
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.oracle.yml up -d
 
 # Stop all services
-docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.oracle.yml down
 
 # View running containers
 docker ps --filter "name=accountsafe"
 
 # View logs (all services)
-docker compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.oracle.yml logs -f
 
 # Trigger manual backup NOW
 docker exec accountsafe-backup /backup.sh
@@ -63,23 +63,26 @@ curl http://localhost:8000/api/health/
 ### Container Architecture
 
 ```
+   Vercel (frontend, accountsafe.vercel.app)
+        │
+        │  HTTPS /api/*
+        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    EXTERNAL NETWORK                         │
+│  ORACLE CLOUD VM — EXTERNAL NETWORK                         │
 │  ┌─────────────┐                                            │
-│  │   frontend  │ ◄── Ports 80, 443 (Nginx + React)         │
-│  │   (nginx)   │                                            │
+│  │    nginx    │ ◄── Ports 80, 443 (TLS termination)        │
 │  └──────┬──────┘                                            │
 │         │                                                   │
 ├─────────┼───────────────────────────────────────────────────┤
-│         │           INTERNAL NETWORK                        │
+│         │  INTERNAL NETWORK (not exposed)                   │
 │         ▼                                                   │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
-│  │   backend   │───►│     db      │◄───│   backup    │     │
-│  │  (gunicorn) │    │ (postgres)  │    │  (cron)     │     │
-│  └─────────────┘    └─────────────┘    └─────────────┘     │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐      │
+│  │   backend   │───►│     db      │◄───│   backup    │      │
+│  │  (gunicorn) │    │ (postgres)  │    │  (cron)     │      │
+│  └─────────────┘    └─────────────┘    └─────────────┘      │
 │                                                             │
 │  ┌─────────────┐                                            │
-│  │   certbot   │ (SSL certificate renewal)                  │
+│  │   certbot   │ (Let's Encrypt auto-renewal)               │
 │  └─────────────┘                                            │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -87,38 +90,38 @@ curl http://localhost:8000/api/health/
 ### Starting Services
 
 ```bash
-# Production (recommended)
-docker compose -f docker-compose.prod.yml up -d --build
+# Production (Oracle Cloud VM)
+make oracle-up                              # equivalent to: docker compose -f docker-compose.oracle.yml up -d --build
 
-# Development (with hot reload)
-docker compose -f docker-compose.dev.yml up -d
+# Local development (with hot reload, full stack in Docker)
+make dev                                    # uses docker-compose.local.yml
 ```
 
 ### Stopping Services
 
 ```bash
 # Graceful shutdown (preserves data)
-docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.oracle.yml down
 
 # Full cleanup (REMOVES VOLUMES - DATA LOSS!)
-docker compose -f docker-compose.prod.yml down -v  # DANGEROUS
+docker compose -f docker-compose.oracle.yml down -v  # DANGEROUS
 ```
 
 ### Restarting Individual Services
 
 ```bash
 # Restart backend only (after code changes)
-docker compose -f docker-compose.prod.yml restart backend
+docker compose -f docker-compose.oracle.yml restart backend
 
 # Restart with rebuild (after requirements.txt changes)
-docker compose -f docker-compose.prod.yml up -d --build backend
+docker compose -f docker-compose.oracle.yml up -d --build backend
 ```
 
 ### Viewing Logs
 
 ```bash
 # All services (follow mode)
-docker compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.oracle.yml logs -f
 
 # Specific service
 docker logs accountsafe-backend --tail 100 -f
@@ -224,7 +227,7 @@ SENTRY_DSN=https://your-key@sentry.io/your-project-id
 4. Restart backend:
 
 ```bash
-docker compose -f docker-compose.prod.yml restart backend
+docker compose -f docker-compose.oracle.yml restart backend
 ```
 
 **Features when enabled:**
@@ -275,26 +278,30 @@ docker logs accountsafe-backend --tail 100 -f
 docker logs accountsafe-db --tail 50
 
 # Nginx access logs
-docker logs accountsafe-frontend --tail 100
+docker logs accountsafe-nginx --tail 100
 ```
 
 ### Log Aggregation
 
-Logs can be collected by:
-- **AWS CloudWatch** (via awslogs driver)
-- **DigitalOcean App Platform** (automatic)
-- **Datadog/Splunk** (via log shippers)
+Logs can be collected by any tool that consumes container stdout/stderr:
+- **OCI Logging** (native on Oracle Cloud, via the OCI unified monitoring agent)
+- **AWS CloudWatch** (via the `awslogs` Docker log driver)
+- **Loki / Vector / Promtail** (self-hosted, ships JSON logs to Grafana)
+- **Datadog / New Relic / Splunk** (SaaS, via their respective log shippers)
 
-Example: AWS CloudWatch logging driver:
+Example: Loki via `promtail` as a sidecar:
 
 ```yaml
-# Add to docker-compose.prod.yml backend service
-logging:
-  driver: awslogs
-  options:
-    awslogs-group: accountsafe
-    awslogs-region: us-east-1
-    awslogs-stream-prefix: backend
+# Add to docker-compose.oracle.yml
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - /var/log:/var/log
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - external
 ```
 
 ---
@@ -311,8 +318,9 @@ Certbot automatically renews certificates every 12 hours (if needed).
 # Force renewal
 docker exec accountsafe-certbot certbot renew --force-renewal
 
-# Reload Nginx to pick up new certs
-docker exec accountsafe-frontend nginx -s reload
+# Reload Nginx to pick up new certs (the nginx container also auto-reloads
+# every 6h, so a manual reload is rarely necessary)
+docker exec accountsafe-nginx nginx -s reload
 ```
 
 ### Check Certificate Expiry
@@ -327,10 +335,10 @@ echo | openssl s_client -servername yourdomain.com -connect yourdomain.com:443 2
 For new deployments:
 
 ```bash
-make init-ssl
+make oracle-ssl-init
 ```
 
-This runs `scripts/init-letsencrypt.sh` to obtain initial certificates.
+This runs `scripts/oracle-init-ssl.sh`, which spins up a throwaway nginx on :80, runs `certbot certonly --webroot` for `$DOMAIN` from `.env`, and tears the temporary server down. Requires DNS already pointing at the VM and ports 80/443 open.
 
 ---
 
@@ -380,7 +388,7 @@ docker logs accountsafe-backend --tail 50
 
 # Common fixes:
 # 1. Database not ready - wait and restart
-docker compose -f docker-compose.prod.yml restart backend
+docker compose -f docker-compose.oracle.yml restart backend
 
 # 2. Migration needed
 docker exec accountsafe-backend python manage.py migrate
@@ -399,7 +407,7 @@ docker ps | grep accountsafe-db
 docker exec accountsafe-db pg_isready -U postgres
 
 # Restart DB
-docker compose -f docker-compose.prod.yml restart db
+docker compose -f docker-compose.oracle.yml restart db
 ```
 
 ### SSL Certificate Issues
@@ -412,7 +420,7 @@ docker exec accountsafe-certbot certbot certificates
 docker exec accountsafe-certbot certbot renew --dry-run
 
 # Check Nginx config
-docker exec accountsafe-frontend nginx -t
+docker exec accountsafe-nginx nginx -t
 ```
 
 ### Out of Disk Space
@@ -438,7 +446,7 @@ docker ps -a | grep backup
 docker logs accountsafe-backup
 
 # Restart
-docker compose -f docker-compose.prod.yml up -d backup
+docker compose -f docker-compose.oracle.yml up -d backup
 ```
 
 ---
