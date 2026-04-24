@@ -15,7 +15,6 @@ if (!process.env.REACT_APP_API_URL && process.env.NODE_ENV === 'production') {
 const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
-    'ngrok-skip-browser-warning': '69420',
     'Content-Type': 'application/json',
   },
 });
