@@ -236,6 +236,15 @@ CORS_ALLOW_ALL_ORIGINS = False
 # (adds one full RTT on every request).
 CORS_PREFLIGHT_MAX_AGE = 86400
 
+# Extend the default allow-list with headers the frontend sends. The
+# ngrok-skip-browser-warning one is legacy from the ngrok-tunnel dev phase
+# and is still baked into the Vercel bundle; allowing it here lets the
+# preflight pass without having to rebuild the frontend.
+from corsheaders.defaults import default_headers  # noqa: E402
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "ngrok-skip-browser-warning",
+]
+
 # Regex patterns for dynamic subdomains (Vercel previews, LAN dev hosts).
 # Vercel creates a unique URL per PR preview; we must allow the whole subdomain
 # family in production, not just DEBUG.
