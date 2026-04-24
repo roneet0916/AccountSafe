@@ -1,10 +1,8 @@
 # Contributing to AccountSafe
 
-This document outlines the requirements for contributing to AccountSafe. Read it completely before submitting code.
+This document defines the standards for contributing to AccountSafe. Read it completely before submitting code.
 
-Before contributing, review the technical documentation in [`docs/`](docs/):
-- [API Reference](docs/API.md)
-- [Configuration Guide](docs/CONFIGURATION.md)
+For API and configuration details, see the [`docs/`](docs/) directory.
 
 ---
 
@@ -12,6 +10,7 @@ Before contributing, review the technical documentation in [`docs/`](docs/):
 
 - [Security Requirements](#security-requirements)
 - [Development Setup](#development-setup)
+- [Project Structure](#project-structure)
 - [Code Standards](#code-standards)
 - [Testing Requirements](#testing-requirements)
 - [Commit Guidelines](#commit-guidelines)
@@ -22,7 +21,7 @@ Before contributing, review the technical documentation in [`docs/`](docs/):
 
 ## Security Requirements
 
-AccountSafe is a security product. All contributions must adhere to these non-negotiable rules.
+AccountSafe is a security product. These rules are non-negotiable.
 
 ### The Iron Rules
 
@@ -30,34 +29,34 @@ AccountSafe is a security product. All contributions must adhere to these non-ne
 
 2. **Client-side encryption only.** Sensitive data must be encrypted in the browser before transmission. The server must never receive plaintext credentials.
 
-3. **No `any` type in TypeScript.** All code must use explicit types. The `any` keyword circumvents the type system and introduces risk.
+3. **No `any` type in TypeScript.** Use explicit types. `any` circumvents the type system and introduces risk.
 
-4. **No `@ts-ignore` directives.** Fix the type error. Do not silence it.
+4. **No `@ts-ignore` directives.** Fix the type error - do not silence it.
 
-5. **No `console.log` in production code.** Use structured logging for the backend. Remove debugging statements before submission.
+5. **No `console.log` in production code.** Use the structured logger in `frontend/src/utils/logger.ts`. Remove all debug statements before submitting.
 
-6. **No `print()` statements in Python.** Use the `logging` module exclusively. Debug prints will be rejected.
+6. **No `print()` statements in Python.** Use the `logging` module exclusively.
 
 7. **No disabled security headers.** CORS, CSRF, and CSP configurations must not be weakened.
 
-8. **Strict dependency versioning.** No `^` or `~` in `package.json`. All versions must be pinned exactly (e.g., `"react": "18.3.1"` not `"^18.3.1"`). This prevents supply chain attacks via automatic updates.
+8. **Strict dependency versioning.** No `^` or `~` in `package.json`. Pin all versions exactly (e.g. `"react": "18.3.1"`). This prevents supply chain attacks via automatic upgrades.
 
-9. **Dependencies require justification.** New packages must be reviewed for security posture. Prefer well-maintained libraries with minimal transitive dependencies.
+9. **New dependencies require justification.** Review the package's security posture and transitive dependency count before adding it.
 
-10. **Cryptographic code is off-limits.** Do not modify encryption algorithms, key derivation parameters, or cryptographic primitives without explicit maintainer approval and security review.
+10. **Cryptographic code is off-limits without maintainer sign-off.** Do not modify encryption algorithms, key derivation parameters, or cryptographic primitives without explicit approval and a security review.
 
-### Security Review Triggers
+### Mandatory Security Review
 
-The following changes require mandatory security review before merge:
+The following changes require a security review before merge:
 
-- Any modification to `frontend/src/utils/encryption.ts`
-- Any modification to `backend/api/features/auth/zero_knowledge.py`
-- Any modification to `backend/api/features/security/` (canary traps, sessions)
+- Any change to `frontend/src/utils/encryption.ts`
+- Any change to `backend/api/features/auth/zero_knowledge.py`
+- Any change to `backend/api/features/security/` (sessions, canary traps, health score)
 - Authentication or session management changes
-- New API endpoints handling sensitive data
+- New API endpoints that handle sensitive data
 - Changes to CORS, CSRF, or CSP policies
 - Database schema changes involving encrypted fields
-- Dependency updates to security-critical packages
+- Dependency updates to cryptography, JWT, or auth packages
 - Changes to duress mode or canary trap logic
 
 ---
@@ -66,52 +65,91 @@ The following changes require mandatory security review before merge:
 
 ### Prerequisites
 
-| Tool | Version |
-|------|---------|
-| Python | 3.10+ |
-| Node.js | 18+ |
-| PostgreSQL | 15+ (or SQLite for development) |
-| Git | 2.40+ |
+| Tool | Min Version | Notes |
+|------|-------------|-------|
+| Python | 3.10 | **Windows:** use `py` launcher from python.org - not MSYS2 |
+| Node.js | 18 | Includes npm |
+| PostgreSQL | 15 | Must be running before starting the backend |
+| Git | 2.40 | |
 
-### Repository Setup
+> **Windows Python:** Install from [python.org](https://www.python.org/downloads/) and tick "Add to PATH". Always use `py -m venv venv` (the Python Launcher), not `python -m venv venv`. The `python` command may resolve to MSYS2 or the Microsoft Store stub, both of which produce broken venvs on Windows.
+
+### Fork and clone
 
 ```bash
-# Fork the repository on GitHub, then:
+# Fork on GitHub, then:
 git clone https://github.com/YOUR-USERNAME/AccountSafe.git
 cd AccountSafe
 git remote add upstream https://github.com/pankaj-bind/AccountSafe.git
 ```
 
-### Backend Setup
+### Backend setup
 
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate    # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env        # Configure local settings
-python manage.py migrate
-python manage.py runserver
 ```
 
-### Frontend Setup
+**Create and activate a virtual environment:**
+
+```bash
+# Linux / macOS
+python3 -m venv venv
+source venv/bin/activate
+
+# Windows - Command Prompt (recommended)
+py -m venv venv
+venv\Scripts\activate.bat
+
+# Windows - PowerShell
+py -m venv venv
+.\venv\Scripts\Activate.ps1
+# First-time only, if blocked by execution policy:
+# Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+**Install dependencies:**
+
+```bash
+pip install -r requirements-local.txt
+```
+
+**Configure environment - create `backend/.env`:**
+
+```env
+DEBUG=True
+SECRET_KEY=django-insecure-dev-only-key-change-in-production
+DB_NAME=accountsafe
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_HOST=localhost
+DB_PORT=5432
+```
+
+**Run migrations and start:**
+
+```bash
+python manage.py migrate
+python manage.py runserver        # http://localhost:8000
+```
+
+### Frontend setup
 
 ```bash
 cd frontend
 npm install
-cp .env.example .env        # Configure API URL
-npm start
+npm start                         # http://localhost:3000
 ```
 
-### Verify Installation
+### Verify your setup
 
 ```bash
-# Run all tests
-make test
-
-# Or run individually
+# Linux / macOS
 make test-backend
 make test-frontend
+
+# Windows
+scripts\run_tests.bat backend
+scripts\run_tests.bat frontend
 
 # Type checking
 cd frontend && npx tsc --noEmit
@@ -119,32 +157,69 @@ cd frontend && npx tsc --noEmit
 
 ---
 
+## Project Structure
+
+```
+backend/
+├── api/
+│   ├── features/                  # All business logic lives here
+│   │   ├── auth/                  # Authentication & Zero-Knowledge
+│   │   │   ├── views.py           # Login, register, password reset
+│   │   │   ├── zero_knowledge.py  # ZK auth, duress mode
+│   │   │   ├── services.py        # Business logic
+│   │   │   ├── serializers.py     # Request/response schemas
+│   │   │   └── urls.py
+│   │   ├── vault/                 # Vault management
+│   │   │   ├── views.py           # Categories, organisations, profiles
+│   │   │   ├── zk_views.py        # Zero-knowledge vault operations
+│   │   │   └── services.py
+│   │   ├── security/              # Security features
+│   │   │   ├── views.py           # Health score, sessions, canary traps
+│   │   │   └── services.py
+│   │   └── shared_secret/         # Secure credential sharing
+│   │       ├── views.py
+│   │       └── services.py
+│   ├── models.py                  # Database models (shared)
+│   ├── tests/                     # pytest test suite
+│   │   ├── conftest.py
+│   │   ├── test_auth.py
+│   │   ├── test_vault_api.py
+│   │   └── test_zero_knowledge.py
+│   └── utils/                     # Shared utilities
+├── core/
+│   ├── settings.py
+│   └── urls.py
+└── requirements-local.txt         # Pinned dev dependencies
+
+frontend/src/
+├── components/       # Shared UI components
+├── contexts/         # React context providers (Auth, Panic, Theme, ...)
+├── features/         # Feature-specific components
+├── hooks/            # Custom React hooks
+├── pages/            # Route-level components (one per page)
+├── services/         # API client layer
+├── types/            # TypeScript type definitions
+└── utils/            # Shared utilities (encryption, logger, formatters, ...)
+```
+
+> **Do not add new views to `backend/api/views.py`.** All new features belong in `backend/api/features/{module}/`.
+
+---
+
 ## Code Standards
 
 ### TypeScript (Frontend)
 
-Configuration: `tsconfig.json` with strict mode enabled.
+Strict mode is enabled in `tsconfig.json`. All of the following apply.
 
-**Required compiler options:**
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "noFallthroughCasesInSwitch": true
-  }
-}
-```
-
-**Style requirements:**
-
-- Functional components only. No class components.
+**Requirements:**
+- Functional components only - no class components.
 - Explicit return types on all functions.
-- Interface definitions for all props and state.
-- Error handling with typed catch blocks (`catch (error: unknown)`).
-- Imports grouped: React, external, internal, types.
+- Interface definitions for all props and state shapes.
+- Typed catch blocks: `catch (error: unknown)`.
+- No `any`, no `@ts-ignore`.
+- Imports ordered: React → external libraries → internal modules → types.
+- Use the structured logger (`src/utils/logger.ts`), not `console.log`.
 
 **Example:**
 
@@ -175,22 +250,21 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
 
 ### Python (Backend)
 
-Configuration: PEP 8 compliance. Black formatter. Flake8 linting.
+PEP 8, formatted with Black (line length 88), linted with Flake8, imports sorted with isort.
 
-**Style requirements:**
-
+**Requirements:**
 - Type hints on all function signatures.
-- Docstrings for all public functions and classes.
+- Docstrings on all public functions and classes.
+- Use `logging` module - never `print()`.
 - Maximum line length: 88 characters.
-- Imports sorted with isort.
 
 **Example:**
 
 ```python
+import logging
 from typing import Optional
 
-from rest_framework import status
-from rest_framework.response import Response
+logger = logging.getLogger(__name__)
 
 
 def encrypt_credential(plaintext: str, key: bytes) -> Optional[str]:
@@ -199,7 +273,7 @@ def encrypt_credential(plaintext: str, key: bytes) -> Optional[str]:
 
     Args:
         plaintext: The string to encrypt.
-        key: The 256-bit encryption key.
+        key: A 256-bit encryption key.
 
     Returns:
         Base64-encoded ciphertext, or None if encryption fails.
@@ -209,110 +283,76 @@ def encrypt_credential(plaintext: str, key: bytes) -> Optional[str]:
     """
     if not plaintext:
         raise ValueError("Plaintext cannot be empty")
-    
-    # Implementation
-    ...
+    # ...
 ```
-
-### File Organization
-
-```
-# Backend structure (Domain-Driven Design)
-backend/
-├── api/
-│   ├── features/              # Feature modules (ALL business logic goes here)
-│   │   ├── auth/              # Authentication & Zero-Knowledge
-│   │   │   ├── views.py       # Login, register, password reset, PIN
-│   │   │   ├── zero_knowledge.py  # ZK auth, duress mode
-│   │   │   ├── services.py    # Business logic
-│   │   │   ├── serializers.py # Request/response schemas
-│   │   │   └── urls.py        # Route definitions
-│   │   ├── vault/             # Vault management
-│   │   │   ├── views.py       # Categories, organizations, profiles
-│   │   │   ├── zk_views.py    # Zero-knowledge vault operations
-│   │   │   └── services.py    # Business logic
-│   │   ├── security/          # Security features
-│   │   │   ├── views.py       # Health score, sessions, canary traps
-│   │   │   └── services.py    # Business logic
-│   │   └── shared_secret/     # Secure sharing
-│   │       ├── views.py       # Create/retrieve shared secrets
-│   │       └── services.py    # Business logic
-│   ├── models.py              # Database models (shared across features)
-│   ├── utils/                 # Shared utilities
-│   │   └── concurrency.py     # Fire-and-forget task execution
-│   └── views.py               # DEPRECATED - minimal legacy views only
-├── core/
-│   ├── settings.py            # Django configuration
-│   └── urls.py                # Master URL router
-└── requirements.txt           # Pinned dependencies
-
-# Frontend structure
-frontend/src/
-├── components/           # Shared UI components
-├── features/             # Feature-specific components (if complex)
-├── pages/                # Route components (one per page)
-├── hooks/                # Custom React hooks
-├── services/             # API client layer
-├── contexts/             # React context providers
-├── utils/                # Utility functions (encryption, validation)
-└── types/                # TypeScript type definitions
-```
-
-** IMPORTANT:** Do NOT add new views to `backend/api/views.py`. All new features must be implemented in the appropriate `backend/api/features/{module}/` directory.
 
 ---
 
 ## Testing Requirements
 
-### Coverage Expectations
+### Coverage expectations
 
-| Area | Minimum Coverage |
-|------|------------------|
+| Area | Minimum |
+|------|---------|
 | Encryption utilities | 90% |
 | Authentication flows | 85% |
 | API endpoints | 80% |
 | UI components | 70% |
 
-### Backend Testing
+### Running the full test suite
 
-Framework: pytest with Django test client.
+**Linux / macOS:**
+```bash
+make test
+```
+
+**Windows:**
+```bat
+scripts\run_tests.bat
+```
+
+### Backend (pytest)
 
 ```bash
 cd backend
-python -m pytest -v --cov=api --cov-report=term-missing
+
+# Linux / macOS
+source venv/bin/activate
+
+# Windows
+venv\Scripts\activate.bat
+
+python -m pytest -v
+python -m pytest -v --cov=api --cov-report=term-missing   # with coverage
 ```
 
-**Or use the test script (recommended before PRs):**
-```bash
-./scripts/run_tests.sh
-```
-
-Required test categories:
-- Unit tests for encryption/decryption
-- Integration tests for API endpoints
-- Authentication flow tests
-- Permission and access control tests
-
-### Frontend Testing
-
-Framework: Jest with React Testing Library.
+### Frontend (Jest)
 
 ```bash
 cd frontend
-npm test -- --coverage
+npm test -- --watchAll=false                   # run once
+npm test -- --watchAll=false --coverage        # with coverage report
 ```
 
-Required test categories:
+### What to test
+
+**Backend:**
+- Unit tests for encryption/decryption logic
+- Integration tests for API endpoints (use the Django test client, not mocks)
+- Authentication flow tests - register, login, duress mode, session expiry
+- Permission and access control tests
+
+**Frontend:**
 - Component rendering tests
-- Hook behavior tests
-- Encryption utility tests
-- Error boundary tests
+- Custom hook behaviour tests
+- Encryption utility tests (`src/utils/__tests__/`)
+- Error boundary behaviour
 
 ---
 
 ## Commit Guidelines
 
-Format: Conventional Commits specification.
+Format: [Conventional Commits](https://www.conventionalcommits.org/).
 
 ```
 <type>(<scope>): <subject>
@@ -324,39 +364,40 @@ Format: Conventional Commits specification.
 
 ### Types
 
-| Type | Description |
-|------|-------------|
+| Type | Use for |
+|------|---------|
 | `feat` | New feature |
 | `fix` | Bug fix |
-| `security` | Security fix or improvement |
-| `refactor` | Code change with no functional difference |
+| `security` | Security fix or hardening |
+| `refactor` | Code restructure with no behaviour change |
 | `perf` | Performance improvement |
-| `test` | Test addition or modification |
-| `docs` | Documentation |
+| `test` | Adding or updating tests |
+| `docs` | Documentation only |
 | `chore` | Build, dependency, or tooling changes |
 
 ### Rules
 
-- Subject line: imperative mood, no period, under 50 characters.
-- Body: explain what and why, not how. Wrap at 72 characters.
-- Reference issues: `Closes #123` or `Fixes #456`.
+- Subject: imperative mood, no period, under 50 characters.
+- Body: explain *what* and *why*, not *how*. Wrap at 72 characters.
+- Reference issues in the footer: `Closes #123` or `Fixes #456`.
 
 ### Examples
 
 ```
-feat(vault): add credential export functionality
+feat(vault): add encrypted credential export
 
-Implement encrypted export of credentials to JSON format.
-Export uses the existing encryption key for consistency.
+Implement JSON export of vault credentials using the existing
+AES-256-GCM encryption key. Export is always encrypted - no
+plaintext export path is provided.
 
 Closes #234
 ```
 
 ```
-security(auth): enforce rate limiting on login endpoint
+security(auth): rate-limit login endpoint per IP
 
 Add per-IP rate limiting to prevent brute-force attacks.
-Limit: 5 attempts per minute, lockout for 15 minutes.
+5 attempts per minute; 15-minute lockout on breach.
 
 Refs #189
 ```
@@ -365,84 +406,73 @@ Refs #189
 
 ## Pull Request Process
 
-### Before Submitting
+### Checklist before submitting
 
-Verify the following:
-
-- [ ] Code compiles without errors (`tsc --noEmit`)
-- [ ] All tests pass (`pytest`, `npm test`)
-- [ ] No linting errors (`flake8`, `eslint`)
-- [ ] Commits follow conventional format
-- [ ] Documentation updated if applicable
-- [ ] No secrets or credentials in diff
+- [ ] Code compiles without errors (`npx tsc --noEmit`)
+- [ ] All tests pass (`make test` or `scripts\run_tests.bat`)
+- [ ] No linting errors (`flake8 .` and `npm run lint`)
+- [ ] Commits follow Conventional Commits format
+- [ ] No secrets, `.env` files, or credentials in the diff
+- [ ] Documentation updated if behaviour changed
+- [ ] Security-sensitive changes flagged for review
 
 ### Submission
 
 1. Push your branch to your fork.
 2. Open a pull request against `main`.
-3. Fill out the PR template completely.
-4. Request review from maintainers.
+3. Fill out the PR template completely - incomplete PRs will not be reviewed.
+4. Request review from a maintainer.
 
-### PR Title Format
+### PR title format
 
-Same as commit message format:
+Same convention as commit messages:
 
 ```
-feat(vault): add credential search functionality
+feat(vault): add credential search
 fix(auth): resolve session timeout race condition
 security(api): patch IDOR vulnerability in profile endpoint
 ```
 
-### Review Process
+### Review process
 
-1. Automated checks must pass (CI/CD).
+1. All CI checks must pass.
 2. At least one maintainer approval required.
 3. Security-sensitive changes require two approvals.
-4. Address all review comments before merge.
-5. Squash commits on merge.
-
-### After Merge
-
-- Delete your feature branch.
-- Verify deployment to staging (if applicable).
-- Monitor for regressions.
+4. Address every review comment before merge.
+5. Commits are squashed on merge.
 
 ---
 
 ## Issue Reporting
 
-### Bug Reports
+### Bugs
 
-Use the bug report template. Include:
+Include:
+1. **Title** - specific and descriptive.
+2. **Environment** - OS, browser, Python/Node versions.
+3. **Steps to reproduce** - minimal numbered steps.
+4. **Expected behaviour** - what should happen.
+5. **Actual behaviour** - what happens instead.
+6. **Logs / screenshots** - sanitise any sensitive data before pasting.
 
-1. **Title**: Clear, specific description.
-2. **Environment**: OS, browser, versions.
-3. **Steps to reproduce**: Numbered, minimal steps.
-4. **Expected behavior**: What should happen.
-5. **Actual behavior**: What happens instead.
-6. **Logs/Screenshots**: Relevant output (sanitize sensitive data).
+### Feature requests
 
-### Feature Requests
+Include:
+1. **Problem statement** - what problem does this solve?
+2. **Proposed solution** - how should it work?
+3. **Alternatives considered** - other approaches you evaluated.
+4. **Security implications** - any security considerations.
 
-Use the feature request template. Include:
-
-1. **Problem statement**: What problem does this solve?
-2. **Proposed solution**: How should it work?
-3. **Alternatives considered**: Other approaches evaluated.
-4. **Security implications**: Any security considerations.
-
-### Security Vulnerabilities
+### Security vulnerabilities
 
 Do not open public issues for security vulnerabilities.
 
-See [SECURITY.md](SECURITY.md) for responsible disclosure procedures.
+Follow the responsible disclosure process in [SECURITY.md](SECURITY.md).
 
 ---
 
 ## Questions
 
-For questions about contributing:
-
-1. Check existing issues and discussions.
+1. Search existing issues and discussions first.
 2. Open a GitHub Discussion for general questions.
-3. Contact maintainers for security-related questions.
+3. Contact maintainers directly for security-related questions.
