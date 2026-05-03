@@ -124,7 +124,7 @@ const MobileHeader: React.FC<{
   title: string;
 }> = ({ onMenuClick, title }) => {
   return (
-    <div className="lg:hidden sticky top-16 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 -mx-4 px-4 py-3 mb-6">
+    <div className="lg:hidden sticky top-16 z-30 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border-b border-slate-200 dark:border-zinc-800 -mx-4 px-4 py-3 mb-6">
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
@@ -170,7 +170,7 @@ const DocsLayout: React.FC = () => {
   const category = getCategoryForDoc(slug);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
+    <div className="min-h-screen bg-white dark:bg-zinc-950">
       {/* Mobile Sidebar */}
       <MobileSidebar
         isOpen={isMobileSidebarOpen}
