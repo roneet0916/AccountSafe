@@ -137,7 +137,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ content, className })
         </div>
         
         {/* Scroll to top button */}
-        <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800">
+        <div className="mt-6 pt-4 border-t border-slate-200 dark:border-zinc-800">
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
