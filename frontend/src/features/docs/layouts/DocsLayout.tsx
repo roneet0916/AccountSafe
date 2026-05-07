@@ -65,15 +65,15 @@ const NavigationCards: React.FC<{ currentSlug: string }> = ({ currentSlug }) => 
   const { prev, next } = getAdjacentDocs(currentSlug);
   
   return (
-    <div className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800">
+    <div className="mt-16 pt-8 border-t border-slate-200 dark:border-zinc-800">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Previous Article */}
         {prev ? (
           <Link
             to={`/docs/${prev.slug}`}
-            className="group flex items-center gap-4 p-5 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/5 transition-all"
+            className="group flex items-center gap-4 p-5 rounded-xl border border-slate-200 dark:border-zinc-800 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/5 transition-all"
           >
-            <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors">
+            <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors">
               <ArrowLeft className="w-5 h-5 text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
             </div>
             <div className="flex-1 min-w-0">
@@ -93,7 +93,7 @@ const NavigationCards: React.FC<{ currentSlug: string }> = ({ currentSlug }) => 
         {next ? (
           <Link
             to={`/docs/${next.slug}`}
-            className="group flex items-center justify-end gap-4 p-5 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/5 transition-all text-right"
+            className="group flex items-center justify-end gap-4 p-5 rounded-xl border border-slate-200 dark:border-zinc-800 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/5 transition-all text-right"
           >
             <div className="flex-1 min-w-0">
               <div className="text-xs font-medium text-slate-500 dark:text-slate-500 uppercase tracking-wide mb-1">
@@ -103,7 +103,7 @@ const NavigationCards: React.FC<{ currentSlug: string }> = ({ currentSlug }) => 
                 {next.title}
               </div>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors">
+            <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors">
               <ArrowRight className="w-5 h-5 text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
             </div>
           </Link>
@@ -124,11 +124,11 @@ const MobileHeader: React.FC<{
   title: string;
 }> = ({ onMenuClick, title }) => {
   return (
-    <div className="lg:hidden sticky top-16 z-30 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border-b border-slate-200 dark:border-zinc-800 -mx-4 px-4 py-3 mb-6">
+    <div className="lg:hidden sticky top-16 z-30 bg-white/80 dark:bg-[#0a0a0b]/80 backdrop-blur-xl border-b border-slate-200 dark:border-zinc-800/50 -mx-4 px-4 py-3 mb-6">
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="p-2 -ml-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="p-2 -ml-2 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
         >
           <Menu className="w-5 h-5 text-slate-600 dark:text-slate-400" />
         </button>
@@ -170,7 +170,7 @@ const DocsLayout: React.FC = () => {
   const category = getCategoryForDoc(slug);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950">
+    <div className="min-h-screen bg-white dark:bg-[#0a0a0b]">
       {/* Mobile Sidebar */}
       <MobileSidebar
         isOpen={isMobileSidebarOpen}
@@ -186,7 +186,7 @@ const DocsLayout: React.FC = () => {
               LEFT PANE - Navigation Sidebar (Desktop)
               ══════════════════════════════════════════════════════════════════ */}
           <aside className="hidden lg:block col-span-3 xl:col-span-2">
-            <div className="sticky top-16 h-[calc(100vh-4rem)] border-r border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="sticky top-16 h-[calc(100vh-4rem)] border-r border-slate-200 dark:border-zinc-800 overflow-hidden">
               <DocsSidebar currentSlug={slug} />
             </div>
           </aside>
@@ -223,7 +223,7 @@ const DocsLayout: React.FC = () => {
               <NavigationCards currentSlug={slug} />
               
               {/* Footer */}
-              <footer className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800">
+              <footer className="mt-12 pt-8 border-t border-slate-200 dark:border-zinc-800">
                 <div className="flex flex-col sm:flex-row justify-between gap-4 text-sm text-slate-500 dark:text-slate-500">
                   <div>
                     Last updated: {new Date().toLocaleDateString('en-US', { 

@@ -160,8 +160,8 @@ const calloutConfig: Record<CalloutType, {
   },
   info: {
     icon: Info,
-    bgColor: 'bg-slate-50 dark:bg-slate-500/10',
-    borderColor: 'border-slate-200 dark:border-slate-500/30',
+    bgColor: 'bg-slate-50 dark:bg-zinc-500/10',
+    borderColor: 'border-slate-200 dark:border-zinc-500/30',
     iconColor: 'text-slate-500',
     textColor: 'text-slate-800 dark:text-slate-300',
     title: 'Info',
@@ -256,18 +256,18 @@ const DocLink: React.FC<{ href?: string; children: React.ReactNode }> = ({ href,
 
 const DocSkeleton: React.FC = () => (
   <div className="animate-pulse space-y-6">
-    <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-lg w-3/4"></div>
+    <div className="h-10 bg-slate-200 dark:bg-zinc-800 rounded-lg w-3/4"></div>
     <div className="space-y-3">
-      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full"></div>
-      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-5/6"></div>
-      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-4/6"></div>
+      <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-full"></div>
+      <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-5/6"></div>
+      <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-4/6"></div>
     </div>
-    <div className="h-7 bg-slate-200 dark:bg-slate-800 rounded-lg w-1/2 mt-8"></div>
+    <div className="h-7 bg-slate-200 dark:bg-zinc-800 rounded-lg w-1/2 mt-8"></div>
     <div className="space-y-3">
-      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full"></div>
-      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4"></div>
+      <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-full"></div>
+      <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-3/4"></div>
     </div>
-    <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-xl mt-6"></div>
+    <div className="h-32 bg-slate-200 dark:bg-zinc-800 rounded-xl mt-6"></div>
   </div>
 );
 
@@ -278,7 +278,7 @@ const DocNotFound: React.FC<{ filename: string }> = ({ filename }) => (
     </div>
     <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Document Not Found</h2>
     <p className="text-slate-600 dark:text-slate-400 max-w-md mb-6">
-      The file <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-sm">{filename}</code> could not be found.
+      The file <code className="px-2 py-1 bg-slate-100 dark:bg-zinc-800 rounded text-sm">{filename}</code> could not be found.
     </p>
     <Link
       to="/docs/getting-started"
@@ -359,7 +359,7 @@ const DocViewer: React.FC<DocViewerProps> = ({ filename, onContentLoad }) => {
           h1: ({ children }) => {
             const id = String(children).toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
             return (
-              <h1 id={id} className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight border-b border-slate-200 dark:border-slate-800 pb-4 mb-8">
+              <h1 id={id} className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight border-b border-slate-200 dark:border-zinc-800 pb-4 mb-8">
                 {children}
               </h1>
             );
@@ -400,7 +400,7 @@ const DocViewer: React.FC<DocViewerProps> = ({ filename, onContentLoad }) => {
             
             if (isInline) {
               return (
-                <code className="px-1.5 py-0.5 text-sm font-mono bg-slate-100 dark:bg-slate-800 text-pink-600 dark:text-pink-400 rounded" {...props}>
+                <code className="px-1.5 py-0.5 text-sm font-mono bg-slate-100 dark:bg-zinc-800 text-pink-600 dark:text-pink-400 rounded" {...props}>
                   {children}
                 </code>
               );
@@ -455,14 +455,14 @@ const DocViewer: React.FC<DocViewerProps> = ({ filename, onContentLoad }) => {
           
           // Tables
           table: ({ children }) => (
-            <div className="overflow-x-auto my-6 rounded-xl border border-slate-200 dark:border-slate-800">
-              <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+            <div className="overflow-x-auto my-6 rounded-xl border border-slate-200 dark:border-zinc-800">
+              <table className="min-w-full divide-y divide-slate-200 dark:divide-zinc-800">
                 {children}
               </table>
             </div>
           ),
           thead: ({ children }) => (
-            <thead className="bg-slate-50 dark:bg-slate-800/50">{children}</thead>
+            <thead className="bg-slate-50 dark:bg-zinc-800/50">{children}</thead>
           ),
           th: ({ children }) => (
             <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">
@@ -470,13 +470,13 @@ const DocViewer: React.FC<DocViewerProps> = ({ filename, onContentLoad }) => {
             </th>
           ),
           td: ({ children }) => (
-            <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
+            <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-zinc-800">
               {children}
             </td>
           ),
           
           // Horizontal rule
-          hr: () => <hr className="my-8 border-slate-200 dark:border-slate-800" />,
+          hr: () => <hr className="my-8 border-slate-200 dark:border-zinc-800" />,
           
           // Images
           img: ({ src, alt }) => (

@@ -54,7 +54,7 @@ const NavItem: React.FC<{
         'group flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
         isActive
           ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-l-[3px] border-indigo-600 dark:border-indigo-400 -ml-[3px] pl-[calc(0.75rem+3px)]'
-          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/50'
+          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800/50'
       )}
     >
       {Icon && (
@@ -116,7 +116,7 @@ const DocsSidebar: React.FC<DocsSidebarProps> = ({
   return (
     <aside className={clsx('flex flex-col h-full', className)}>
       {/* Header */}
-      <div className="px-4 py-6 border-b border-slate-200 dark:border-slate-800">
+      <div className="px-4 py-6 border-b border-slate-200 dark:border-zinc-800">
         <Link 
           to="/" 
           onClick={onNavigate}
@@ -147,12 +147,12 @@ const DocsSidebar: React.FC<DocsSidebarProps> = ({
       </div>
       
       {/* Footer */}
-      <div className="px-4 py-4 border-t border-slate-200 dark:border-slate-800">
+      <div className="px-4 py-4 border-t border-slate-200 dark:border-zinc-800">
         <a
           href="https://github.com/pankaj-bind/AccountSafe.git"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-all"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800/50 hover:text-slate-900 dark:hover:text-white transition-all"
         >
           <Github className="w-4 h-4" />
           <span className="font-medium">View on GitHub</span>
@@ -189,7 +189,7 @@ export const MobileSidebar: React.FC<{
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="lg:hidden fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-white dark:bg-slate-900 z-50 shadow-2xl"
+            className="lg:hidden fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-white dark:bg-zinc-900 z-50 shadow-2xl"
           >
             <DocsSidebar 
               currentSlug={currentSlug} 
