@@ -21,7 +21,7 @@ export const PrivacyGuardProvider: React.FC<{ children: ReactNode }> = ({ childr
   // Active blur state
   const [isBlurred, setIsBlurred] = useState<boolean>(false);
 
-  // NEW: basic auth check (minimal integration without refactoring auth system)
+  // basic auth check 
   const isAuthenticated = Boolean(localStorage.getItem('authToken'));
 
   // Toggle preference
