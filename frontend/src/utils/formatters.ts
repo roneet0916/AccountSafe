@@ -11,19 +11,19 @@ import { formatDistanceToNow, parseISO, format, isValid } from 'date-fns';
  */
 export const formatRelativeTime = (timestamp: string | null | undefined): string => {
   if (!timestamp) return 'Never';
-  
+
   try {
     const date = parseISO(timestamp);
     if (!isValid(date)) return 'Invalid date';
-    
+
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    
+
     // Use relative time for recent timestamps (within 7 days)
     if (diffInHours < 168) {
       return formatDistanceToNow(date, { addSuffix: true });
     }
-    
+
     // Use formatted date for older timestamps
     return format(date, 'MMM d, yyyy');
   } catch {
@@ -35,46 +35,46 @@ export const formatRelativeTime = (timestamp: string | null | undefined): string
  * Format date and time separately for login records
  * Now uses the time string from backend which includes timezone
  */
-export const formatLoginDateTime = (date: string, time: string): { 
-  relative: string; 
+export const formatLoginDateTime = (date: string, timestamp?: string): {
+  relative: string;
   formatted: string;
   timeOnly: string;
   fullDate: string;
 } => {
   try {
     // Parse the full timestamp
-    const parsedDate = new Date(date);
-    
+    const parsedDate = timestamp ? parseISO(timestamp) : parseISO(date + 'T00:00:00Z');
+
     if (!isValid(parsedDate)) {
-      return { 
-        relative: 'Unknown', 
-        formatted: time,
-        timeOnly: time,
-        fullDate: `${date} ${time}` 
+      return {
+        relative: 'Unknown',
+        formatted: date,
+        timeOnly: 'Unknown',
+        fullDate: date
       };
     }
-    
+
     // Get relative time (e.g., "less than a minute ago")
     const relativeTime = formatDistanceToNow(parsedDate, { addSuffix: true });
-    
+
     // Format time in 12-hour format (e.g., "9:09 PM")
     const timeOnly = format(parsedDate, 'h:mm a');
-    
+
     // Format full date
     const formattedDate = format(parsedDate, 'MMM d, yyyy');
-    
+
     return {
       relative: relativeTime,
-      formatted: time, // Backend timezone format
+      formatted: formattedDate,
       timeOnly: timeOnly,
       fullDate: `${formattedDate} at ${timeOnly}`
     };
   } catch {
-    return { 
-      relative: 'Unknown', 
-      formatted: time,
-      timeOnly: time,
-      fullDate: `${date} ${time}` 
+    return {
+      relative: 'Unknown',
+      formatted: date,
+      timeOnly: 'Unknown',
+      fullDate: date
     };
   }
 };
@@ -91,7 +91,7 @@ export const formatNullableValue = (
   } = {}
 ): { display: string; isUnknown: boolean } => {
   const { type = 'generic', fallback } = options;
-  
+
   if (!value || value === 'Unknown' || value === 'N/A' || value === 'null') {
     const fallbacks: Record<string, string> = {
       location: 'Location undisclosed',
@@ -99,10 +99,10 @@ export const formatNullableValue = (
       ip: 'IP masked',
       generic: fallback || 'Not available',
     };
-    
+
     return { display: fallbacks[type], isUnknown: true };
   }
-  
+
   return { display: value, isUnknown: false };
 };
 
@@ -121,7 +121,7 @@ export const formatCredentialCount = (count: number): {
       action: 'Add your first credential'
     };
   }
-  
+
   if (count === 1) {
     return {
       text: '1 credential',
@@ -129,7 +129,7 @@ export const formatCredentialCount = (count: number): {
       action: 'View credential'
     };
   }
-  
+
   return {
     text: `${count} credentials`,
     isEmpty: false,
@@ -142,15 +142,15 @@ export const formatCredentialCount = (count: number): {
  */
 export const maskSensitiveData = (
   value: string,
-  options: { 
+  options: {
     type: 'email' | 'username' | 'phone' | 'full';
     showChars?: number;
   } = { type: 'full' }
 ): string => {
   if (!value) return '';
-  
+
   const { type, showChars = 3 } = options;
-  
+
   switch (type) {
     case 'email': {
       const [local, domain] = value.split('@');
@@ -181,27 +181,27 @@ export const getSecurityScoreLabel = (score: number): {
   bgClass: string;
   textClass: string;
 } => {
-  if (score >= 90) return { 
-    label: 'Excellent', 
-    color: '#22c55e', 
+  if (score >= 90) return {
+    label: 'Excellent',
+    color: '#22c55e',
     bgClass: 'bg-green-500/10',
     textClass: 'text-green-500'
   };
-  if (score >= 70) return { 
-    label: 'Good', 
-    color: '#3b82f6', 
+  if (score >= 70) return {
+    label: 'Good',
+    color: '#3b82f6',
     bgClass: 'bg-blue-500/10',
     textClass: 'text-blue-500'
   };
-  if (score >= 50) return { 
-    label: 'Fair', 
-    color: '#f59e0b', 
+  if (score >= 50) return {
+    label: 'Fair',
+    color: '#f59e0b',
     bgClass: 'bg-yellow-500/10',
     textClass: 'text-yellow-500'
   };
-  return { 
-    label: 'Needs Attention', 
-    color: '#ef4444', 
+  return {
+    label: 'Needs Attention',
+    color: '#ef4444',
     bgClass: 'bg-red-500/10',
     textClass: 'text-red-500'
   };
