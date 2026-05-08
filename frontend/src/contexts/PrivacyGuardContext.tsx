@@ -21,6 +21,9 @@ export const PrivacyGuardProvider: React.FC<{ children: ReactNode }> = ({ childr
   // Active blur state
   const [isBlurred, setIsBlurred] = useState<boolean>(false);
 
+  // basic auth check 
+  const isAuthenticated = Boolean(localStorage.getItem('authToken'));
+
   // Toggle preference
   const togglePrivacyBlur = useCallback(() => {
     setEnablePrivacyBlurState(prev => {
@@ -38,7 +41,7 @@ export const PrivacyGuardProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   // Consolidated security check function
   const checkSecurity = useCallback(() => {
-    if (!enablePrivacyBlur) {
+    if (!enablePrivacyBlur || !isAuthenticated) {
       setIsBlurred(false);
       return;
     }
@@ -46,11 +49,11 @@ export const PrivacyGuardProvider: React.FC<{ children: ReactNode }> = ({ childr
     // Aggressive check: Blur if EITHER condition is true
     const shouldBlur = document.hidden || !document.hasFocus();
     setIsBlurred(shouldBlur);
-  }, [enablePrivacyBlur]);
+  }, [enablePrivacyBlur, isAuthenticated]);
 
   // Handle all visibility/focus events
   useEffect(() => {
-    if (!enablePrivacyBlur) {
+    if (!enablePrivacyBlur || !isAuthenticated) {
       setIsBlurred(false);
       return;
     }
@@ -60,6 +63,8 @@ export const PrivacyGuardProvider: React.FC<{ children: ReactNode }> = ({ childr
 
     // Event listeners for all scenarios
     const handleVisibilityChange = () => {
+      if (!isAuthenticated) return;
+
       if (document.hidden) {
         setIsBlurred(true);
       } else {
@@ -72,7 +77,9 @@ export const PrivacyGuardProvider: React.FC<{ children: ReactNode }> = ({ childr
 
     const handleWindowBlur = () => {
       // Triggered on Alt-Tab, clicking outside, etc.
-      setIsBlurred(true);
+      if (isAuthenticated) {
+        setIsBlurred(true);
+      }
     };
 
     const handleWindowFocus = () => {
@@ -92,7 +99,7 @@ export const PrivacyGuardProvider: React.FC<{ children: ReactNode }> = ({ childr
       window.removeEventListener('blur', handleWindowBlur);
       window.removeEventListener('focus', handleWindowFocus);
     };
-  }, [enablePrivacyBlur, checkSecurity]);
+  }, [enablePrivacyBlur, isAuthenticated, checkSecurity]);
 
   return (
     <PrivacyGuardContext.Provider value={{ 
