@@ -1,5 +1,6 @@
 # api/serializers.py
 
+from datetime import tzinfo
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from dj_rest_auth.registration.serializers import RegisterSerializer
@@ -427,7 +428,10 @@ class UserSessionSerializer(serializers.ModelSerializer):
         from datetime import timedelta
 
         now = timezone.now()
-        diff = now - obj.last_active
+        last_active = obj.last_active
+        if last_active.tzinfo is None:
+            last_active = last_active.replace(tzinfo=timezone.utc)
+        diff = now - last_active
 
         if diff < timedelta(minutes=1):
             return "Just now"

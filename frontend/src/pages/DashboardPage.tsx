@@ -94,13 +94,13 @@ const GlobeIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
 const LoginRecordRow: React.FC<{ record: LoginRecord; isLast: boolean; index: number }> = ({ record, isLast, index }) => {
   const isSuccess = record.status === 'success' || record.status === 'duress';
   const isDuress = record.is_duress || record.status === 'duress';
-  const dateTime = formatLoginDateTime(record.date, record.time);
+  const dateTime = formatLoginDateTime(record.date, record.timestamp);
   const country = formatNullableValue(record.country, { type: 'location' });
   const isp = formatNullableValue(record.isp, { type: 'isp' });
   const ip = formatNullableValue(record.ip_address, { type: 'ip' });
 
   return (
-    <motion.tr 
+    <motion.tr
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.2 }}
@@ -137,9 +137,9 @@ const LoginRecordRow: React.FC<{ record: LoginRecord; isLast: boolean; index: nu
       <td className="py-3 sm:py-4 px-3 sm:px-4 whitespace-nowrap">
         <code className={`text-xs sm:text-sm font-mono px-1.5 sm:px-2 py-0.5 sm:py-1 rounded ${
           ip.isUnknown 
-            ? 'text-zinc-400 dark:text-zinc-500 bg-zinc-50 dark:bg-zinc-800/50 italic' 
+          ? 'text-zinc-400 dark:text-zinc-500 bg-zinc-50 dark:bg-zinc-800/50 italic'
             : 'text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800'
-        }`}>
+          }`}>
           {ip.display}
         </code>
       </td>
@@ -154,9 +154,9 @@ const LoginRecordRow: React.FC<{ record: LoginRecord; isLast: boolean; index: nu
           )}
           <span className={`text-xs sm:text-sm ${
             country.isUnknown 
-              ? 'text-zinc-400 dark:text-zinc-500 italic' 
+            ? 'text-zinc-400 dark:text-zinc-500 italic'
               : 'text-zinc-700 dark:text-zinc-300'
-          }`}>
+            }`}>
             {country.display}
           </span>
         </div>
@@ -164,9 +164,9 @@ const LoginRecordRow: React.FC<{ record: LoginRecord; isLast: boolean; index: nu
       <td className="py-3 sm:py-4 px-3 sm:px-4">
         <span className={`text-xs sm:text-sm ${
           isp.isUnknown 
-            ? 'text-zinc-400 dark:text-zinc-500 italic' 
+          ? 'text-zinc-400 dark:text-zinc-500 italic'
             : 'text-zinc-600 dark:text-zinc-400'
-        }`}>
+          }`}>
           {isp.display}
         </span>
       </td>
@@ -218,7 +218,7 @@ const DashboardPage: React.FC = () => {
       logger.log('🔄 Mode changed - refetching dashboard data...');
       fetchDashboardData();
     };
-    
+
     window.addEventListener('vault-mode-changed', handleModeChange);
     return () => {
       window.removeEventListener('vault-mode-changed', handleModeChange);
@@ -234,7 +234,7 @@ const DashboardPage: React.FC = () => {
       ]);
       setStats(statsResponse.data);
       setHealthScore(healthResponse.data);
-      
+
       // Extract storage info from profile response (Operation: Iron Fist)
       if (profileResponse.data) {
         setStorageInfo({
@@ -276,7 +276,7 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        
+
         {/* ═══════════════════════════════════════════════════════════════════════
             Page Header
             ═══════════════════════════════════════════════════════════════════════ */}
@@ -341,32 +341,32 @@ const DashboardPage: React.FC = () => {
                 <div className="inline-block min-w-full align-middle">
                   <div className="overflow-hidden">
                     <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">
-                  <thead>
-                    <tr className="bg-zinc-50 dark:bg-zinc-900/50 text-xs sm:text-sm">
-                      <th className="sticky left-0 z-10 bg-zinc-50 dark:bg-zinc-900/50 text-left py-3 px-3 sm:px-4 font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">Status</th>
-                      <th className="text-left py-3 px-3 sm:px-4 font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">Date & Time</th>
-                      <th className="text-left py-3 px-3 sm:px-4 font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">IP Address</th>
-                      <th className="text-left py-3 px-3 sm:px-4 font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">Location</th>
-                      <th className="text-left py-3 px-3 sm:px-4 font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">ISP</th>
-                      <th className="text-left py-3 px-3 sm:px-4 font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">Coordinates</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
-                    <AnimatePresence>
-                      {displayRecords.map((record, index) => (
-                        <LoginRecordRow
-                          key={record.id}
-                          record={record}
-                          isLast={index === displayRecords.length - 1}
-                          index={index}
-                        />
-                      ))}
-                    </AnimatePresence>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+                        <thead>
+                          <tr className="bg-zinc-50 dark:bg-zinc-900/50 text-xs sm:text-sm">
+                            <th className="sticky left-0 z-10 bg-zinc-50 dark:bg-zinc-900/50 text-left py-3 px-3 sm:px-4 font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">Status</th>
+                            <th className="text-left py-3 px-3 sm:px-4 font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">Date & Time</th>
+                            <th className="text-left py-3 px-3 sm:px-4 font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">IP Address</th>
+                            <th className="text-left py-3 px-3 sm:px-4 font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">Location</th>
+                            <th className="text-left py-3 px-3 sm:px-4 font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">ISP</th>
+                            <th className="text-left py-3 px-3 sm:px-4 font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">Coordinates</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
+                          <AnimatePresence>
+                            {displayRecords.map((record, index) => (
+                              <LoginRecordRow
+                                key={record.id}
+                                record={record}
+                                isLast={index === displayRecords.length - 1}
+                                index={index}
+                              />
+                            ))}
+                          </AnimatePresence>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
             )}
           </div>
         </section>
