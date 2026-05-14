@@ -1,7 +1,7 @@
 // DocViewer - Professional markdown renderer with syntax highlighting
 // Features: Prism syntax highlighting, callouts, copy button, custom typography
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -306,6 +306,71 @@ const DocError: React.FC<{ error: string; onRetry: () => void }> = ({ error, onR
 );
 
 // ============================================================================
+// Mermaid Diagram Component
+// ============================================================================
+
+// Lazy-load mermaid: ~2MB chunk is split out and only fetched when a docs page
+// actually renders a ```mermaid block. Single shared promise = one initialize().
+let mermaidPromise: Promise<typeof import('mermaid').default> | null = null;
+const loadMermaid = () => {
+  if (!mermaidPromise) {
+    mermaidPromise = import('mermaid').then(({ default: mermaid }) => {
+      mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'strict' });
+      return mermaid;
+    });
+  }
+  return mermaidPromise;
+};
+
+let mermaidIdCounter = 0;
+
+const MermaidDiagram = React.memo(({ chart }: { chart: string }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const idRef = useRef<string>(`mermaid-diagram-${++mermaidIdCounter}`);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const render = async () => {
+      if (!ref.current) return;
+
+      // Clean up orphaned mermaid SVG from a previous render with the same ID
+      const old = document.getElementById(idRef.current);
+      if (old) old.remove();
+
+      try {
+        const mermaid = await loadMermaid();
+        if (cancelled || !ref.current) return;
+        const { svg, bindFunctions } = await mermaid.render(idRef.current, chart);
+        if (!cancelled && ref.current) {
+          ref.current.innerHTML = svg;
+          bindFunctions?.(ref.current);
+        }
+      } catch (err) {
+        console.error('Mermaid render error:', err);
+        if (!cancelled && ref.current) {
+          // XSS-safe error rendering - use textContent, never innerHTML with user input
+          ref.current.innerHTML = '';
+          const pre = document.createElement('pre');
+          pre.style.cssText = 'color:#f87171;font-size:12px;padding:8px;border:1px solid #f87171;border-radius:4px;white-space:pre-wrap;';
+          pre.textContent = `Diagram parse error: ${err}`;
+          ref.current.appendChild(pre);
+        }
+      }
+    };
+    render();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chart]);
+
+  return <div ref={ref} className="my-6 overflow-x-auto" />;
+});
+
+MermaidDiagram.displayName = 'MermaidDiagram';
+
+// ============================================================================
 // Main DocViewer Component
 // ============================================================================
 
@@ -396,8 +461,14 @@ const DocViewer: React.FC<DocViewerProps> = ({ filename, onContentLoad }) => {
           // Code blocks with syntax highlighting
           code: ({ node, className, children, ...props }) => {
             const match = /language-(\w+)/.exec(className || '');
+            const language = match?.[1];
             const isInline = !match && !className;
-            
+
+            // Intercept mermaid code blocks and render as diagrams
+            if (language === 'mermaid') {
+              return <MermaidDiagram chart={String(children)} />;
+            }
+
             if (isInline) {
               return (
                 <code className="px-1.5 py-0.5 text-sm font-mono bg-slate-100 dark:bg-zinc-800 text-pink-600 dark:text-pink-400 rounded" {...props}>
@@ -405,9 +476,9 @@ const DocViewer: React.FC<DocViewerProps> = ({ filename, onContentLoad }) => {
                 </code>
               );
             }
-            
+
             return (
-              <CodeBlock language={match?.[1] || ''}>
+              <CodeBlock language={language || ''}>
                 {String(children).replace(/\n$/, '')}
               </CodeBlock>
             );
