@@ -95,8 +95,6 @@ If you are auditing AccountSafe and discover credentials that appear to trigger 
 - Bypass of authentication to access canary management endpoints
 - Information disclosure of real credentials via canary mechanisms
 
-If in doubt, reference [tests/CANARY_TRAP_TESTING.md](tests/CANARY_TRAP_TESTING.md) for implementation details before filing a report.
-
 #### Duress Mode Is Intentional (Not a Backdoor)
 
 Similarly, if you discover a secondary authentication path that reveals different vault contents-**this is the Duress Mode (Ghost Vault) feature**.
