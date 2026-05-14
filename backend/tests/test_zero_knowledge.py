@@ -38,7 +38,7 @@ from api.models import (
     UserProfile,
     UserSession,
 )
-from api.tests.conftest import generate_auth_hash, generate_salt
+from tests.conftest import generate_auth_hash, generate_salt
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
