@@ -42,7 +42,7 @@ import { logger } from '../utils/logger';
 
 const CONFIG = {
   // Auto-lock after 5 minutes of inactivity
-  INACTIVITY_TIMEOUT_MS: 5 * 60 * 1000,
+  INACTIVITY_TIMEOUT_MS: 15 * 60 * 1000,
   
   // Warn user 30 seconds before auto-lock
   INACTIVITY_WARNING_MS: 30 * 1000,
@@ -220,26 +220,16 @@ export const CryptoProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // INACTIVITY TIMER - DISABLED (Auto-lock removed per user request)
+  // INACTIVITY TIMER - Auto-lock after CONFIG.INACTIVITY_TIMEOUT_MS of inactivity  
   // ═══════════════════════════════════════════════════════════════════════════
   
   const resetInactivityTimer = useCallback(() => {
-    // Auto-lock feature disabled - inactivity timer is no longer active
-    // Only panic mode can lock the vault
     lastActivityRef.current = Date.now();
-    
-    // Clear any existing timers if they somehow exist
-    if (inactivityTimerRef.current) {
-      clearTimeout(inactivityTimerRef.current);
-    }
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-    }
-    
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     setTimeUntilLock(null);
-    
-    // DO NOT set new timer - auto-lock is disabled
-  }, []);
+    inactivityTimerRef.current = setTimeout(() => lock('inactivity'), CONFIG.INACTIVITY_TIMEOUT_MS);
+  }, [lock]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // USER ACTIVITY LISTENERS
