@@ -41,7 +41,7 @@ import { logger } from '../utils/logger';
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const CONFIG = {
-  // Auto-lock after 5 minutes of inactivity
+  // Auto-lock after 15 minutes of inactivity
   INACTIVITY_TIMEOUT_MS: 15 * 60 * 1000,
   
   // Warn user 30 seconds before auto-lock
@@ -220,15 +220,32 @@ export const CryptoProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // INACTIVITY TIMER - Auto-lock after CONFIG.INACTIVITY_TIMEOUT_MS of inactivity  
+  // INACTIVITY TIMER - Auto-lock after CONFIG.INACTIVITY_TIMEOUT_MS of inactivity
+  // (with a CONFIG.INACTIVITY_WARNING_MS countdown exposed via `timeUntilLock`)
   // ═══════════════════════════════════════════════════════════════════════════
-  
+
   const resetInactivityTimer = useCallback(() => {
     lastActivityRef.current = Date.now();
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     setTimeUntilLock(null);
-    inactivityTimerRef.current = setTimeout(() => lock('inactivity'), CONFIG.INACTIVITY_TIMEOUT_MS);
+
+    inactivityTimerRef.current = setTimeout(() => {
+      const countdownStart = Date.now();
+      setTimeUntilLock(CONFIG.INACTIVITY_WARNING_MS);
+      countdownIntervalRef.current = setInterval(() => {
+        const remaining = CONFIG.INACTIVITY_WARNING_MS - (Date.now() - countdownStart);
+        if (remaining <= 0) {
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+          }
+          lock('inactivity');
+        } else {
+          setTimeUntilLock(remaining);
+        }
+      }, 1000);
+    }, CONFIG.INACTIVITY_TIMEOUT_MS - CONFIG.INACTIVITY_WARNING_MS);
   }, [lock]);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -238,7 +255,7 @@ export const CryptoProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     if (!isUnlocked) return;
     
-    const activityEvents = ['mousedown', 'keydown', 'touchstart', 'scroll'];
+    const activityEvents = ['mousedown', 'mousemove', 'keydown', 'touchstart', 'scroll'];
     
     const handleActivity = () => {
       resetInactivityTimer();
