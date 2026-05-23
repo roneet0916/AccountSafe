@@ -1,76 +1,110 @@
 import React from 'react';
-import { BookOpen, ArrowRight, Check } from 'lucide-react';
+import { BookOpen, ArrowRight, ShieldCheck, Lock, Sparkles, ClipboardCheck } from 'lucide-react';
 import { ButtonLink } from '../components/ui';
 
 const LandingPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-white dark:bg-[#09090b]">
-      <div className="flex items-start sm:items-center justify-center min-h-screen px-4 py-8 pt-8 sm:pt-0">
-        <div className="text-center max-w-2xl mx-auto">
-          {/* Hero Icon */}
-          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-6 sm:mb-8 flex items-center justify-center">
-            <div className="p-2 sm:p-2.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg sm:rounded-xl border border-emerald-200 dark:border-emerald-500/20 overflow-hidden">
-              <img src="/logo.png" alt="AccountSafe" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
+    <div className="min-h-screen bg-white dark:bg-[#050507]">
+      <div className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-80 bg-gradient-to-b from-primary/25 via-transparent to-transparent dark:from-primary-500/20" />
+        <div className="pointer-events-none absolute right-0 top-20 -z-10 h-72 w-72 rounded-full bg-sky-300/20 blur-3xl dark:bg-cyan-500/20" />
+        <div className="pointer-events-none absolute left-0 bottom-0 -z-10 h-72 w-72 rounded-full bg-emerald-300/20 blur-3xl dark:bg-violet-500/20" />
+
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+          <div className="grid gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+            <div className="max-w-xl">
+              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200">
+                <ShieldCheck className="h-4 w-4" />
+                Privacy-first security, zero-knowledge by design
+              </div>
+
+              <h1 className="mt-8 text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-white sm:text-5xl">
+                Keep your passwords, notes, and secrets in a vault only you can open.
+              </h1>
+
+              <p className="mt-6 text-lg leading-8 text-zinc-600 dark:text-zinc-300">
+                AccountSafe combines authenticated encryption, secure key derivation, and automatic lock behavior so your sensitive data stays private and protected.
+              </p>
+
+              <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <ButtonLink
+                  to="/register"
+                  variant="default"
+                  className="rounded-full px-6 py-3 text-sm font-semibold shadow-lg shadow-primary/20 hover:bg-primary-600"
+                >
+                  Start free vault
+                </ButtonLink>
+                <ButtonLink
+                  to="/docs/security"
+                  variant="outline"
+                  className="rounded-full px-6 py-3 text-sm font-semibold"
+                  leftIcon={<BookOpen className="h-4 w-4" />}
+                  rightIcon={<ArrowRight className="h-4 w-4 opacity-70" />}
+                >
+                  View security docs
+                </ButtonLink>
+              </div>
+
+              <div className="mt-12 grid gap-4 sm:grid-cols-2">
+                {[
+                  {
+                    icon: Lock,
+                    label: 'AES-256-GCM',
+                    description: 'Authenticated encryption protecting your stored secrets.',
+                  },
+                  {
+                    icon: Sparkles,
+                    label: 'Auto-lock',
+                    description: 'Inactivity and tab-security keep access locked when you step away.',
+                  },
+                  {
+                    icon: ClipboardCheck,
+                    label: 'Secure recovery',
+                    description: 'Store recovery material safely during account setup.',
+                  },
+                  {
+                    icon: ShieldCheck,
+                    label: 'Zero-knowledge',
+                    description: 'Your master key stays in memory only; never on disk.',
+                  },
+                ].map((feature) => (
+                  <div key={feature.label} className="rounded-3xl border border-zinc-200 bg-zinc-50 p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                    <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-100">
+                      <feature.icon className="h-5 w-5" />
+                    </div>
+                    <h2 className="mt-4 text-base font-semibold text-zinc-900 dark:text-white">{feature.label}</h2>
+                    <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{feature.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[2rem] border border-zinc-200/70 bg-white/95 p-8 shadow-2xl shadow-zinc-200/30 backdrop-blur-xl dark:border-zinc-800/70 dark:bg-zinc-950/85 dark:shadow-black/20">
+              <div className="space-y-6">
+                <div className="rounded-3xl bg-zinc-100 p-5 dark:bg-zinc-900">
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">AccountSafe Vault</p>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    {['Passwords', 'Secure Notes', 'Recovery Keys', 'Device Audit'].map((item) => (
+                      <div key={item} className="rounded-3xl border border-zinc-200 bg-white px-4 py-4 text-sm font-medium text-zinc-900 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-3xl border border-primary/15 bg-primary/5 p-5 dark:border-primary/25 dark:bg-primary/10">
+                    <p className="text-sm font-semibold text-primary dark:text-primary-100">100% client-side key derivation</p>
+                    <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-300">Your vault is decrypted only in the browser after you enter your password.</p>
+                  </div>
+                  <div className="rounded-3xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-white">Designed for modern threat models</p>
+                    <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">If the tab is hidden too long, AccountSafe requires re-authentication before unlocking again.</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white mb-3 sm:mb-4 px-4">
-            Welcome to <span className="text-primary dark:text-primary-400">AccountSafe</span>
-          </h1>
-          <p className="text-sm sm:text-base md:text-lg text-zinc-600 dark:text-zinc-400 mb-8 sm:mb-10 max-w-xl mx-auto px-4">
-            Protected by AES-256-GCM authenticated encryption with Argon2id key derivation. Our zero-knowledge architecture ensures your data is encrypted securely at rest
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
-            <ButtonLink 
-              to="/login" 
-              variant="default"
-              size="lg"
-              className="shadow-lg shadow-primary/25 hover:shadow-primary/40"
-            >
-              Log in to your vault
-            </ButtonLink>
-            <ButtonLink 
-              to="/register" 
-              variant="outline"
-              size="lg"
-            >
-              Create free account
-            </ButtonLink>
-          </div>
-          
-          {/* Secondary CTA - Security Architecture */}
-          <div className="mt-4 sm:mt-6 flex justify-center px-4">
-            <ButtonLink
-              to="/docs/security"
-              variant="ghost"
-              className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-              leftIcon={<BookOpen className="w-4 h-4" />}
-              rightIcon={<ArrowRight className="w-4 h-4 opacity-50" />}
-            >
-              Security Architecture
-            </ButtonLink>
-          </div>
-          
-          {/* Trust indicators */}
-            <div className="mt-10 sm:mt-12 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-zinc-600 dark:text-zinc-500 px-4">
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-success" />
-                Zero-Knowledge Architecture
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-success" />
-                Industry-Standard Encryption at Rest
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-success" />
-                Secure Credential Management
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-success" />
-                Managed Security Architecture
-              </div>
-            </div>
         </div>
       </div>
     </div>

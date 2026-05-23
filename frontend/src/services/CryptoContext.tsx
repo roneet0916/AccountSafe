@@ -41,8 +41,8 @@ import { logger } from '../utils/logger';
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const CONFIG = {
-  // Auto-lock after 15 minutes of inactivity
-  INACTIVITY_TIMEOUT_MS: 15 * 60 * 1000,
+  // Auto-lock after 5 minutes of inactivity
+  INACTIVITY_TIMEOUT_MS: 5 * 60 * 1000,
   
   // Warn user 30 seconds before auto-lock
   INACTIVITY_WARNING_MS: 30 * 1000,

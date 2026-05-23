@@ -3,7 +3,8 @@
 User agent parsing utilities.
 """
 
-from user_agents import parse as ua_parse
+_USER_AGENTS_AVAILABLE = None
+_ua_parse = None
 
 
 def parse_user_agent(user_agent_string: str) -> dict:
@@ -20,51 +21,73 @@ def parse_user_agent(user_agent_string: str) -> dict:
             "os": "Unknown",
         }
 
-    try:
-        ua = ua_parse(user_agent_string)
+    global _USER_AGENTS_AVAILABLE, _ua_parse
+    if _USER_AGENTS_AVAILABLE is None:
+        try:
+            from user_agents import parse as ua_parse
 
-        # Determine device type and icon
-        if ua.is_mobile:
-            device_type = "mobile"
-            device_icon = "📱"
-        elif ua.is_tablet:
-            device_type = "tablet"
-            device_icon = "📱"
-        elif ua.is_pc:
-            device_type = "desktop"
-            device_icon = "💻"
-        else:
-            device_type = "unknown"
-            device_icon = "💻"
+            _ua_parse = ua_parse
+            _USER_AGENTS_AVAILABLE = True
+        except ImportError:
+            _USER_AGENTS_AVAILABLE = False
 
-        # Build device name
-        browser_name = ua.browser.family if ua.browser.family != "Other" else "Unknown"
-        os_name = ua.os.family if ua.os.family != "Other" else "Unknown"
+    if _USER_AGENTS_AVAILABLE and callable(_ua_parse):
+        try:
+            ua = _ua_parse(user_agent_string)
 
-        # Create clean device name
-        parts = []
-        if browser_name:
-            parts.append(browser_name)
-        if os_name:
-            parts.append(f"on {os_name}")
+            # Determine device type and icon
+            if ua.is_mobile:
+                device_type = "mobile"
+                device_icon = "📱"
+            elif ua.is_tablet:
+                device_type = "tablet"
+                device_icon = "📱"
+            elif ua.is_pc:
+                device_type = "desktop"
+                device_icon = "💻"
+            else:
+                device_type = "unknown"
+                device_icon = "💻"
 
-        device_name = " ".join(parts) if parts else "Unknown Device"
+            # Build device name
+            browser_name = ua.browser.family if ua.browser.family != "Other" else "Unknown"
+            os_name = ua.os.family if ua.os.family != "Other" else "Unknown"
 
-        return {
-            "device_type": device_type,
-            "device_icon": device_icon,
-            "device_name": device_name,
-            "browser": browser_name,
-            "os": os_name,
-        }
-    except Exception as e:
-        return {
-            "device_type": "unknown",
-            "device_icon": "💻",
-            "device_name": "Unknown Device",
-            "browser": "Unknown",
-            "os": "Unknown",
-        }
+            # Create clean device name
+            parts = []
+            if browser_name:
+                parts.append(browser_name)
+            if os_name:
+                parts.append(f"on {os_name}")
+
+            device_name = " ".join(parts) if parts else "Unknown Device"
+
+            return {
+                "device_type": device_type,
+                "device_icon": device_icon,
+                "device_name": device_name,
+                "browser": browser_name,
+                "os": os_name,
+            }
+        except Exception:
+            pass
+
+    # Fallback when user_agents is unavailable or parsing fails.
+    basic_info = parse_user_agent_basic(user_agent_string)
+    icon = "📱" if basic_info["device_type"] in ("mobile", "tablet") else "💻"
+    device_name = (
+        f"{basic_info['browser']} on {basic_info['os']}"
+        if basic_info["browser"] != "Unknown"
+        else "Unknown Device"
+    )
+
+    return {
+        "device_type": basic_info["device_type"],
+        "device_icon": icon,
+        "device_name": device_name,
+        "browser": basic_info["browser"],
+        "os": basic_info["os"],
+    }
 
 
 def parse_user_agent_basic(user_agent_str: str) -> dict:

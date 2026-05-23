@@ -12,17 +12,56 @@ interface PrivacyGuardContextType {
 const PrivacyGuardContext = createContext<PrivacyGuardContextType | undefined>(undefined);
 
 export const PrivacyGuardProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // User preference - stored in localStorage
-  const [enablePrivacyBlur, setEnablePrivacyBlurState] = useState<boolean>(() => {
-    const saved = localStorage.getItem('enablePrivacyBlur');
-    return saved !== null ? JSON.parse(saved) : true; // Default enabled
-  });
+  // Store user preference in localStorage and keep it synced across tabs
+  const [enablePrivacyBlur, setEnablePrivacyBlurState] = useState<boolean>(true);
 
   // Active blur state
   const [isBlurred, setIsBlurred] = useState<boolean>(false);
 
-  // basic auth check 
-  const isAuthenticated = Boolean(localStorage.getItem('authToken'));
+  // Basic auth presence check using localStorage, kept in sync with storage events
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return Boolean(localStorage.getItem('authToken'));
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const saved = localStorage.getItem('enablePrivacyBlur');
+    if (saved !== null) {
+      try {
+        setEnablePrivacyBlurState(JSON.parse(saved));
+      } catch {
+        setEnablePrivacyBlurState(true);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'enablePrivacyBlur') {
+        if (event.newValue !== null) {
+          try {
+            setEnablePrivacyBlurState(JSON.parse(event.newValue));
+          } catch {
+            setEnablePrivacyBlurState(true);
+          }
+        }
+      }
+
+      if (event.key === 'authToken') {
+        setIsAuthenticated(Boolean(event.newValue));
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  const syncEnablePrivacyBlur = useCallback((enabled: boolean) => {
+    setEnablePrivacyBlurState(enabled);
+    localStorage.setItem('enablePrivacyBlur', JSON.stringify(enabled));
+  }, []);
 
   // Toggle preference
   const togglePrivacyBlur = useCallback(() => {
@@ -35,9 +74,8 @@ export const PrivacyGuardProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   // Set preference directly
   const setEnablePrivacyBlur = useCallback((enabled: boolean) => {
-    setEnablePrivacyBlurState(enabled);
-    localStorage.setItem('enablePrivacyBlur', JSON.stringify(enabled));
-  }, []);
+    syncEnablePrivacyBlur(enabled);
+  }, [syncEnablePrivacyBlur]);
 
   // Consolidated security check function
   const checkSecurity = useCallback(() => {
@@ -83,7 +121,8 @@ export const PrivacyGuardProvider: React.FC<{ children: ReactNode }> = ({ childr
     };
 
     const handleWindowFocus = () => {
-      // Window regained focus - check if we should unblur
+      // Keep auth state up to date when the user returns to the window.
+      setIsAuthenticated(Boolean(localStorage.getItem('authToken')));
       setTimeout(() => {
         checkSecurity();
       }, 100);
